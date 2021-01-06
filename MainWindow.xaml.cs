@@ -49,12 +49,11 @@ namespace K4ACalibration
                         SynchronizedImagesOnly = true
                     });
 
-                    Capture capture1 = null;
+                    Capture capDevice = null;
                     int i = 0;
-                    while (true)
-                    {
+                    while (true) {
                         i++;
-                        capture1 = device.GetCapture();
+                        capDevice = device.GetCapture();
 
                         //int color_width = device.GetCalibration().ColorCameraCalibration.ResolutionWidth;
                         //int color_height = device.GetCalibration().ColorCameraCalibration.ResolutionHeight;
@@ -75,12 +74,11 @@ namespace K4ACalibration
                         // Create a BitmapSource for the unmodified color image.
                         // Creating the BitmapSource is slow, so do it asynchronously on another thread
                         Task<BitmapSource> createInputColorBitmapTask = Task.Run(() => {
-                            BitmapSource source = capture1.Color.CreateBitmapSource();
+                            BitmapSource source = capDevice.Color.CreateBitmapSource();
                             // Allow the bitmap to move threads
                             source.Freeze();
                             return source;
                         });
-
 
                         // Wait for both bitmaps to be ready and assign them.
                         BitmapSource inputColorBitmap = await createInputColorBitmapTask.ConfigureAwait(true);
@@ -92,6 +90,40 @@ namespace K4ACalibration
                             lblDene.Content = " # " + i;
                             this.Color_Image.Source = inputColorBitmap;
                         }));
+
+
+
+
+
+
+                        Task<BitmapSource> createDepthBitmapTask = Task.Run(() => {
+                            BitmapSource source = capDevice.Depth.CreateBitmapSource();
+                            // Allow the bitmap to move threads
+                            source.Freeze();
+                            return source;
+                        });
+
+                        BitmapSource depthBitmap = await createDepthBitmapTask.ConfigureAwait(true);
+
+                        Application.Current.Dispatcher.Invoke(new Action(() => {
+                            this.imgDepth.Source = depthBitmap;
+                        }));
+
+
+
+                        Task<BitmapSource> createInfraRedBitmapTask = Task.Run(() => {
+                            BitmapSource source = capDevice.IR.CreateBitmapSource();
+                            source.Freeze();
+                            return source;
+                        });
+
+                        BitmapSource irBitmap = await createInfraRedBitmapTask.ConfigureAwait(true);
+
+                        Application.Current.Dispatcher.Invoke(new Action(() => {
+                            this.imgInfraRed.Source = irBitmap;
+                        }));
+
+
 
                         /*Color_Image.Dispatcher.Invoke(() =>
                         {
@@ -105,9 +137,8 @@ namespace K4ACalibration
 
                 }
                 //MessageBox.Show("device open end");
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception exp) {
+                Console.WriteLine("Caught exp: ");
             }
             return;
         }
