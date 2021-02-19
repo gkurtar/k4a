@@ -5,32 +5,29 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:K4ACalibration"
         mc:Ignorable="d"
-        Title="MainWindow" Height="800" Width="1200">
-    <Grid>
+        Title="MainWindow" Height="900" Width="1200">
+    <Grid >
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="350" />
+            <RowDefinition Height="500"/>
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
-        <DockPanel Grid.Row="0" Margin="0 0 0 20">
+        <DockPanel Grid.Row="0" Margin="0,0,0.4,20.4">
             <Image DockPanel.Dock="Left" Stretch="Fill" Height="32" Width="80" HorizontalAlignment="Left" Margin="0 10 0 5"/>
             <TextBlock DockPanel.Dock="Right" Margin="0 0 -1 0" HorizontalAlignment="Right" VerticalAlignment="Bottom"  FontFamily="Segoe UI" FontSize="18">Kinect Calibration</TextBlock>
             <Image Source="Images\Status.png" Stretch="None" HorizontalAlignment="Center" Margin="0 0 0 5"/>
         </DockPanel>
 
-        <Label Grid.Row="0" x:Name="lblDene" Content="Label" HorizontalAlignment="Left" Margin="110,12.8,0,0" VerticalAlignment="Top" Width="275" Height="40" Grid.RowSpan="3"/>
-        <Image Grid.Row="2" Grid.Column="0"  x:Name="imgInfraRed"  Stretch="UniformToFill" Margin="0,0.2,0.4,555.4" Grid.RowSpan="2" />
-        <Image Grid.Row="2" Grid.Column="2"  x:Name="imgDepth"  Stretch="UniformToFill" />
-        <Image Grid.Row="3" x:Name="Color_Image"  Stretch="UniformToFill" />
+        <Label Grid.Row="0" Grid.Column="0" x:Name="lblDene" Content="Label" HorizontalAlignment="Left" Margin="110,13,0,0" VerticalAlignment="Top" Width="275" Height="40"/>
+        <Image Grid.Row="1" Grid.Column="0" x:Name="imgInfraRed"  Stretch="UniformToFill"  />
+        <Image Grid.Row="2" Grid.Column="1" x:Name="imgDepth"  Stretch="UniformToFill"    />
+        <Image Grid.Row="2" Grid.Column="2" x:Name="Color_Image"  Stretch="UniformToFill"  />
 
 
     </Grid>

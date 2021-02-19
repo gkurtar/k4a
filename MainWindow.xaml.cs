@@ -123,8 +123,6 @@ namespace K4ACalibration
                             this.imgInfraRed.Source = irBitmap;
                         }));
 
-
-
                         /*Color_Image.Dispatcher.Invoke(() =>
                         {
                             // UI operation goes inside of Invoke
@@ -138,7 +136,7 @@ namespace K4ACalibration
                 }
                 //MessageBox.Show("device open end");
             } catch (Exception exp) {
-                Console.WriteLine("Caught exp: ");
+                Console.WriteLine("Caught exp: " + exp);
             }
             return;
         }
