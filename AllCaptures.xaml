@@ -1,0 +1,35 @@
+﻿<Window x:Class="K4ACalibration.AllCaptures"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:K4ACalibration"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="900" MaxHeight="1200" Width="1400" MaxWidth="1800" >
+    <Grid >
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="350" />
+            <RowDefinition Height="500"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <DockPanel Grid.Row="0" >
+            <Image DockPanel.Dock="Left" Stretch="Fill" Height="32" Width="80" HorizontalAlignment="Left" Margin="0 10 0 5"/>
+            <TextBlock DockPanel.Dock="Right" Margin="0 0 -1 0" HorizontalAlignment="Right" VerticalAlignment="Bottom"  FontFamily="Segoe UI" FontSize="18">Kinect Calibration</TextBlock>
+            <Image Source="Images\Status.png" Stretch="None" HorizontalAlignment="Center" Margin="0 0 0 5"/>
+        </DockPanel>
+
+        <Label Grid.Row="0" Grid.Column="0" x:Name="lblDene" Content="Label" HorizontalAlignment="Left"
+               VerticalAlignment="Top" Width="275" Height="40" Grid.ColumnSpan="2"/>
+        <Image Grid.Row="1" Grid.Column="0" x:Name="imgInfraRed"  Stretch="UniformToFill"  />
+        <Image Grid.Row="2" Grid.Column="0" x:Name="Color_Image"  Stretch="UniformToFill"    />
+        <Image Grid.Row="2" Grid.Column="1" x:Name="imgDepth"  Stretch="UniformToFill"  />
+
+
+    </Grid>
+</Window>

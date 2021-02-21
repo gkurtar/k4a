@@ -49,6 +49,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Azure.Kinect.BodyTracking, Version=1.0.0.0, Culture=neutral, PublicKeyToken=10a7881b780be99e, processorArchitecture=AMD64">
+      <HintPath>packages\Microsoft.Azure.Kinect.BodyTracking.1.0.1\lib\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Azure.Kinect.Sensor, Version=1.4.1.0, Culture=neutral, PublicKeyToken=6f6471c4ba98fac7, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.Azure.Kinect.Sensor.1.4.1\lib\netstandard2.0\Microsoft.Azure.Kinect.Sensor.dll</HintPath>
     </Reference>
@@ -91,9 +94,16 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AllCaptures.xaml.cs">
+      <DependentUpon>AllCaptures.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Window1.xaml.cs">
       <DependentUpon>Window1.xaml</DependentUpon>
     </Compile>
+    <Page Include="AllCaptures.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -130,6 +140,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="dnn_model_2_0.onnx" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -139,9 +150,15 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
-    <Resource Include="Images\Status.png" />
+    <Resource Include="Images\Kinect.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\Logo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="packages\Microsoft.Azure.Kinect.Sensor.1.4.1\build\netstandard2.0\Microsoft.Azure.Kinect.Sensor.targets" Condition="Exists('packages\Microsoft.Azure.Kinect.Sensor.1.4.1\build\netstandard2.0\Microsoft.Azure.Kinect.Sensor.targets')" />
@@ -150,5 +167,11 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('packages\Microsoft.Azure.Kinect.Sensor.1.4.1\build\netstandard2.0\Microsoft.Azure.Kinect.Sensor.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.Azure.Kinect.Sensor.1.4.1\build\netstandard2.0\Microsoft.Azure.Kinect.Sensor.targets'))" />
+    <Error Condition="!Exists('packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.targets'))" />
+    <Error Condition="!Exists('packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.targets'))" />
+    <Error Condition="!Exists('packages\Microsoft.Azure.Kinect.BodyTracking.1.0.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.Azure.Kinect.BodyTracking.1.0.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.targets'))" />
   </Target>
+  <Import Project="packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.targets" Condition="Exists('packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.targets')" />
+  <Import Project="packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.targets" Condition="Exists('packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.targets')" />
+  <Import Project="packages\Microsoft.Azure.Kinect.BodyTracking.1.0.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.targets" Condition="Exists('packages\Microsoft.Azure.Kinect.BodyTracking.1.0.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.targets')" />
 </Project>
