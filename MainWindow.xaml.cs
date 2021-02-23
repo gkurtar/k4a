@@ -197,6 +197,31 @@ namespace K4ACalibration
             }
         }
 
+        static Random rnd = new Random();
+        public static void updateMemory(Memory<byte> aobjMemory)
+        {
+            byte[] bytArray = aobjMemory.ToArray();
+            for (int i = 0; i < bytArray.Length; i++)
+            {
+                bytArray[i] = (byte)rnd.Next(0, 255);
+            }
+            aobjMemory = new Memory<byte>(bytArray);
+        }
+
+        public static Image updateImage(Image aimgDepth)
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                for (int j = 0; j < 100; j++)
+                {
+                    //aimgDepth.SetPixel(i, j, (short)rnd.Next(180, 255));
+                    aimgDepth.SetPixel(i, j, 0xFFFFFFFF);
+                }
+            }
+            GeneralUtil.sdf();
+            return aimgDepth;
+        }
+
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             while (running)
@@ -207,11 +232,41 @@ namespace K4ACalibration
                     {
                         case OutputType.Depth:
                             //PresentDepth(capture);
-                            lblDene.Content = "depth";
+                            lblDene.Content = "depth hgt: " + capture.Depth.HeightPixels
+                                + " wid: " + capture.Depth.WidthPixels + " format:" + capture.Depth.Format;
+
+                            //Memory<byte> sa = capture.Depth.Memory;
+
+                            //lblDene.Content = sa.Length;
+
+                            //updateMemory(sa);
+                            //capture.Depth.SetPixel()
+                            //updateImage(capture.Depth);
+
+                            
 
                             _uiContext.Send(x =>
                             {
-                                _bitmap = capture.Depth.CreateBitmapSource();
+                                //Image dd = updateImage(capture.Depth);
+                                //GeneralUtil.updateImage(capture.Depth);
+                                //_bitmap = capture.Depth.CreateBitmapSource();
+
+                                Image dd = GeneralUtil.updateImage(capture.Depth);
+                                _bitmap = dd.CreateBitmapSource();
+
+                                //Image dd = updateImage(capture.Depth);
+                                //_bitmap = dd.CreateBitmapSource();
+
+                                //for (int i = 0; i < 100; i++)
+                                //{
+                                //    for (int j = 0; j < 100; j++)
+                                //    {
+                                //        //capture.Depth.SetPixel(i, j, (int)rnd.Next(180, 255));
+                                //        capture.Depth.SetPixel(i, j, 0xFFFFFFFF);
+                                //    }
+                                //}
+
+                                //_bitmap = capture.Depth.CreateBitmapSource();
                                 _bitmap.Freeze();
                             }, null);
 
@@ -274,6 +329,14 @@ namespace K4ACalibration
                 }
             }
             return;
+        }
+
+        private BitmapSource colorizeDepthData(BitmapSource aobjBitmapSource)
+        {
+            Image aa = new Image(ImageFormat.ColorBGRA32, 12, 43);
+            //Memory<TPixel> p = aa.GetPixels();
+            //aobjBitmapSource.
+            return aobjBitmapSource;
         }
 
         private SynchronizationContext _uiContext;

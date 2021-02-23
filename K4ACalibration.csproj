@@ -49,6 +49,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ImGui.NET, Version=1.78.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\ImGui.NET.1.78.0\lib\netstandard2.0\ImGui.NET.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Azure.Kinect.BodyTracking, Version=1.0.0.0, Culture=neutral, PublicKeyToken=10a7881b780be99e, processorArchitecture=AMD64">
       <HintPath>packages\Microsoft.Azure.Kinect.BodyTracking.1.0.1\lib\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.dll</HintPath>
     </Reference>
@@ -97,6 +100,7 @@
     <Compile Include="AllCaptures.xaml.cs">
       <DependentUpon>AllCaptures.xaml</DependentUpon>
     </Compile>
+    <Compile Include="GeneralUtil.cs" />
     <Compile Include="Window1.xaml.cs">
       <DependentUpon>Window1.xaml</DependentUpon>
     </Compile>
@@ -170,8 +174,10 @@
     <Error Condition="!Exists('packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.targets'))" />
     <Error Condition="!Exists('packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.targets'))" />
     <Error Condition="!Exists('packages\Microsoft.Azure.Kinect.BodyTracking.1.0.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.Azure.Kinect.BodyTracking.1.0.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.targets'))" />
+    <Error Condition="!Exists('packages\ImGui.NET.1.78.0\build\net40\ImGui.NET.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\ImGui.NET.1.78.0\build\net40\ImGui.NET.targets'))" />
   </Target>
   <Import Project="packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.targets" Condition="Exists('packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.targets')" />
   <Import Project="packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.targets" Condition="Exists('packages\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.0.9.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.Dependencies.cuDNN.targets')" />
   <Import Project="packages\Microsoft.Azure.Kinect.BodyTracking.1.0.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.targets" Condition="Exists('packages\Microsoft.Azure.Kinect.BodyTracking.1.0.1\build\netstandard2.0\Microsoft.Azure.Kinect.BodyTracking.targets')" />
+  <Import Project="packages\ImGui.NET.1.78.0\build\net40\ImGui.NET.targets" Condition="Exists('packages\ImGui.NET.1.78.0\build\net40\ImGui.NET.targets')" />
 </Project>
