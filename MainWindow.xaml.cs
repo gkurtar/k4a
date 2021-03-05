@@ -13,6 +13,7 @@ namespace K4ACalibration
     using System.IO;
     using System.Threading.Tasks;
     using System.Windows;
+    using System.Windows.Input;
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
     using Microsoft.Azure.Kinect.Sensor;
@@ -27,39 +28,25 @@ namespace K4ACalibration
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        /// <summary>
-        /// Azure Kinect sensor
-        /// </summary>
+        /// <summary> Azure Kinect sensor </summary>
         private readonly Device kinect = null;
 
-        /// <summary>
-        /// Bitmap to display
-        /// </summary>
+        /// <summary> Bitmap to display </summary>
         private WriteableBitmap bitmap = null;
 
-        /// <summary>
-        /// Current status text to display
-        /// </summary>
+        /// <summary> Current status text to display </summary>
         private string statusText = null;
 
-        /// <summary>
-        /// The width in pixels of the color image from the Azure Kinect DK
-        /// </summary>
+        /// <summary> The width in pixels of the color image from the Azure Kinect DK </summary>
         private readonly int colorWidth = 0;
 
-        /// <summary>
-        /// The height in pixels of the color image from the Azure Kinect DK
-        /// </summary>
+        /// <summary> The height in pixels of the color image from the Azure Kinect DK </summary>
         private readonly int colorHeight = 0;
 
-        /// <summary>
-        /// Status of the application
-        /// </summary>
+        /// <summary> Status of the application </summary>
         private bool running = true;
 
-        /// <summary>
-        /// Initializes a new instance of the MainWindow class.
-        /// </summary>
+        /// <summary> Initializes a new instance of the MainWindow class. </summary>
         public MainWindow()
         {
             Outputs = new ObservableCollection<OutputOption>
@@ -70,6 +57,8 @@ namespace K4ACalibration
             };
 
             SelectedOutput = Outputs.First();
+
+            //this.KinectImage.MouseMove += KinectImage_MouseMove;
 
             // Open the default device
             this.kinect = Device.Open();
@@ -87,19 +76,19 @@ namespace K4ACalibration
             this.colorHeight = this.kinect.GetCalibration().ColorCameraCalibration.ResolutionHeight;
             this.bitmap = new WriteableBitmap(colorWidth, colorHeight, 96.0, 96.0, PixelFormats.Bgra32, null);
             this.DataContext = this;
-            this.InitializeComponent();
-            
+            //this.KinectImage.MouseMove += this.mouseMoveOverStream;
+            //this.KinectImage.MouseLeave += this.mouseLeaveFromStream;
+            this.InitializeComponent();            
             this._uiContext = SynchronizationContext.Current;
         }
+
 
         /// <summary>
         /// INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data
         /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
-        /// <summary>
-        /// Gets the bitmap to display
-        /// </summary>
+        /// <summary> Gets the bitmap to display </summary>
         public ImageSource ImageSource
         {
             get
@@ -197,31 +186,6 @@ namespace K4ACalibration
             }
         }
 
-        static Random rnd = new Random();
-        public static void updateMemory(Memory<byte> aobjMemory)
-        {
-            byte[] bytArray = aobjMemory.ToArray();
-            for (int i = 0; i < bytArray.Length; i++)
-            {
-                bytArray[i] = (byte)rnd.Next(0, 255);
-            }
-            aobjMemory = new Memory<byte>(bytArray);
-        }
-
-        public static Image updateImage(Image aimgDepth)
-        {
-            for (int i = 0; i < 100; i++)
-            {
-                for (int j = 0; j < 100; j++)
-                {
-                    //aimgDepth.SetPixel(i, j, (short)rnd.Next(180, 255));
-                    aimgDepth.SetPixel(i, j, 0xFFFFFFFF);
-                }
-            }
-            GeneralUtil.sdf();
-            return aimgDepth;
-        }
-
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             while (running)
@@ -231,19 +195,13 @@ namespace K4ACalibration
                     switch (SelectedOutput.OutputType)
                     {
                         case OutputType.Depth:
-                            //PresentDepth(capture);
-                            lblDene.Content = "depth hgt: " + capture.Depth.HeightPixels
-                                + " wid: " + capture.Depth.WidthPixels + " format:" + capture.Depth.Format;
+                            lblDene.Content = "Depth width: " + capture.Depth.WidthPixels + " height: "
+                                    + capture.Depth.HeightPixels + " format:" + capture.Depth.Format;
 
                             //Memory<byte> sa = capture.Depth.Memory;
-
                             //lblDene.Content = sa.Length;
-
                             //updateMemory(sa);
                             //capture.Depth.SetPixel()
-                            //updateImage(capture.Depth);
-
-                            
 
                             _uiContext.Send(x =>
                             {
@@ -267,6 +225,7 @@ namespace K4ACalibration
                                 //}
 
                                 //_bitmap = capture.Depth.CreateBitmapSource();
+                                
                                 _bitmap.Freeze();
                             }, null);
 
@@ -275,12 +234,12 @@ namespace K4ACalibration
                             //PresentIR(capture);
                             //BitmapSource bmpsInfraRed = capture.IR.CreateBitmapSource();
                             //bmpsInfraRed.Freeze();
-                            
 
                             _uiContext.Send(x =>
                             {
                                 _bitmap = capture.IR.CreateBitmapSource();
-                                lblDene.Content = "IR: width " + _bitmap.Width + " height: " + _bitmap.Height;
+                                lblDene.Content = "IR width: " + capture.IR.WidthPixels + " height: "
+                                    + capture.IR.HeightPixels + " format:" + capture.IR.Format;
                                 _bitmap.Freeze();
                             }, null);
 
@@ -294,8 +253,9 @@ namespace K4ACalibration
                             {
                                 _bitmap = capture.Color.CreateBitmapSource();
                                 _bitmap.Freeze();
+                                lblDene.Content = "Color width: " + capture.Color.WidthPixels + " height: "
+                                    + capture.Color.HeightPixels + " format:" + capture.Color.Format;
                             }, null);
-
                             
                             //this.StatusText = "Received Capture: " + capture.Depth.DeviceTimestamp;
                             //this.bitmap.Lock();
@@ -307,7 +267,6 @@ namespace K4ACalibration
                             //    } }
                             //this.bitmap.AddDirtyRect(region);
                             //this.bitmap.Unlock();
-
                             break;
                     }
 
@@ -354,9 +313,35 @@ namespace K4ACalibration
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("SelectedOutput"));
             }
         }
+
+        void mouseLeaveFromStream(Object sender, MouseEventArgs e)
+        {
+            this.lblDene2.Content = "sdfsd ";
+            return;
+        }
+
+        void mouseMoveOverStream(Object sender, MouseEventArgs e)
+        {
+            this.lblDene2.Content = "x: " + (int)Mouse.GetPosition(this.KinectImage).X
+                + " y: " + (int)Mouse.GetPosition(this.KinectImage).Y;
+            //this.yPosRgbIrStream = (int)Mouse.GetPosition(this.imgLeft).Y;
+            return;
+        }
+
+        //void mouseMoveOverRightStream(Object sender, MouseEventArgs e)
+        //{
+        //    int xPos = (int)Mouse.GetPosition(this).X;
+        //    int yPos = (int)Mouse.GetPosition(this).Y;
+
+        //    int xPosRelToRightStream = (int)Mouse.GetPosition(this.imgRight).X;
+        //    int yPosRelToRightStream = (int)Mouse.GetPosition(this.imgRight).Y;
+
+        //    this.xPosDepthStream = (int)Mouse.GetPosition(this.imgRight).X;
+        //    this.yPosDepthStream = (int)Mouse.GetPosition(this.imgRight).Y;
+            
+        //    return;
+        //}
     }
-
-
 
     public enum OutputType
     {

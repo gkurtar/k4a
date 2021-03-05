@@ -11,15 +11,7 @@ namespace K4ACalibration
     public class GeneralUtil
     {
         static Random rnd = new Random();
-        public static void updateMemory(Memory<byte> aobjMemory)
-        {
-            byte[] bytArray = aobjMemory.ToArray();
-            for (int i = 0; i < bytArray.Length; i++)
-            {
-                bytArray[i] = (byte) rnd.Next(0, 255);
-            }
-        }
-
+        
         public static void sdf()
         {
             return;
@@ -285,5 +277,16 @@ namespace K4ACalibration
 
         //    return result;
         //}
+
+        //static Random rnd = new Random();
+        public static void updateMemory(Memory<byte> aobjMemory)
+        {
+            byte[] bytArray = aobjMemory.ToArray();
+            for (int i = 0; i < bytArray.Length; i++)
+            {
+                bytArray[i] = (byte)rnd.Next(0, 255);
+            }
+            aobjMemory = new Memory<byte>(bytArray);
+        }
     }
 }
