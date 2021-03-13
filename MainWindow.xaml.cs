@@ -64,6 +64,8 @@ namespace K4ACalibration
 
         private long _nCaptureCounter = 0;
 
+        private volatile bool _bSaveAverageFlag = false;
+
         /// <summary> Initializes a new instance of the MainWindow class. </summary>
         public MainWindow()
         {
@@ -119,19 +121,23 @@ namespace K4ACalibration
                     {
                         case OutputType.Depth:
                             lblInfo.Content = "DEPTH " + capture.Depth.WidthPixels + " X "
-                                    + capture.Depth.HeightPixels + ", Format: " + capture.Depth.Format + ", Count: " + this._nCaptureCounter;
+                                    + capture.Depth.HeightPixels + ", Format: " + capture.Depth.Format
+                                    + ", Count: " + this._nCaptureCounter + ", flag? " + _bSaveAverageFlag;
 
                             //Memory<byte> sa = capture.Depth.Memory;
                             //lblDene.Content = sa.Length;
                             //updateMemory(sa);
                             //capture.Depth.SetPixel()
 
-                            if (_lstDepthCaptures.Count == CAPTURE_CAPACITY)
+                            if (this._bSaveAverageFlag)
                             {
-                                _lstDepthCaptures.RemoveAt(0);
+                                if (_lstDepthCaptures.Count >= CAPTURE_CAPACITY)
+                                {
+                                    this._bSaveAverageFlag = false;
+                                }
+                                this._lstDepthCaptures.Add(capture.Reference());
                             }
-                            _lstDepthCaptures.Add(capture.Reference());
-
+                            
                             _uiContext.Send(x =>
                             {
                                 Image dd = GeneralUtil.updateImage(capture.Depth);
@@ -139,16 +145,6 @@ namespace K4ACalibration
 
                                 //Image dd = updateImage(capture.Depth);
                                 //_bitmap = dd.CreateBitmapSource();
-
-                                //for (int i = 0; i < 100; i++)
-                                //{
-                                //    for (int j = 0; j < 100; j++)
-                                //    {
-                                //        //capture.Depth.SetPixel(i, j, (int)rnd.Next(180, 255));
-                                //        capture.Depth.SetPixel(i, j, 0xFFFFFFFF);
-                                //    }
-                                //}
-                                //_bitmap = capture.Depth.CreateBitmapSource();
 
                                 _bitmap.Freeze();
                             }, null);
@@ -164,13 +160,14 @@ namespace K4ACalibration
 
                             break;
                         case OutputType.IR:
-                            //PresentIR(capture);
-                            //BitmapSource bmpsInfraRed = capture.IR.CreateBitmapSource();
-                            //bmpsInfraRed.Freeze();
-                            lblInfo.Content = "IR width: " + capture.IR.WidthPixels + " height: "
-                                    + capture.IR.HeightPixels + " format:" + capture.IR.Format;
+                            lblInfo.Content = "IR " + capture.IR.WidthPixels + " X "
+                                    + capture.IR.HeightPixels + ", Format: " + capture.IR.Format + ", Count: " + this._nCaptureCounter;
 
-                            //capture;
+                            if (_lstIrCaptures.Count == CAPTURE_CAPACITY)
+                            {
+                                _lstIrCaptures.RemoveAt(0);
+                            }
+                            _lstIrCaptures.Add(capture.Reference());
 
                             _uiContext.Send(x =>
                             {
@@ -186,16 +183,20 @@ namespace K4ACalibration
                                 {
                                     short sPixelValue = capture.IR.GetPixel<short>(yPosImage, xPosImage);
                                     this.lblPos.Content = String.Format("x:{0, -3}, y:{1, -3}, val: {2, -5} ", xPosImage, yPosImage, sPixelValue);
-
                                 } // end of if
                             }
 
                             break;
                         case OutputType.Colour:
                         default:
-                            //PresentColour(capture);
-                            lblInfo.Content = "Color width: " + capture.Color.WidthPixels + " height: "
-                                    + capture.Color.HeightPixels + " format:" + capture.Color.Format;
+                            lblInfo.Content = "Color " + capture.Color.WidthPixels + " X "
+                                    + capture.Color.HeightPixels + ", Format: " + capture.Color.Format + ", Count: " + this._nCaptureCounter;
+                            
+                            if (_lstRgbCaptures.Count == CAPTURE_CAPACITY)
+                            {
+                                _lstRgbCaptures.RemoveAt(0);
+                            }
+                            _lstRgbCaptures.Add(capture.Reference());
 
                             _uiContext.Send(x =>
                             {
@@ -265,7 +266,6 @@ namespace K4ACalibration
             return;
         }
 
-
         /// <summary>
         /// Handles the user clicking on the screenshot button
         /// </summary>
@@ -314,13 +314,23 @@ namespace K4ACalibration
 
         private void SaveAverage_Click(object sender, RoutedEventArgs e)
         {
-            String strInfo = "";
-            int count = this._lstDepthCaptures.Count;
-            foreach (Capture aPart in this._lstDepthCaptures)
-            {
-                long lTimes = aPart.Depth.SystemTimestampNsec;
-                strInfo += lTimes + " _ ";
-            }
+            String strInfo = " " + this._lstDepthCaptures.Count;
+            //int count = this._lstDepthCaptures.Count;
+            //foreach (Capture aPart in this._lstDepthCaptures)
+            //{
+            //    long lTimes = aPart.Depth.SystemTimestampNsec;
+            //    strInfo += lTimes + " _ ";
+            //}
+
+            //Capture tempRef = this._lstDepthCaptures.ElementAt(0);
+            //Capture capDepthAverage = new Capture();
+            //capDepthAverage.Depth = new Image(tempRef.Depth.Format, tempRef.Depth.WidthPixels, tempRef.Depth.HeightPixels, tempRef.Depth.StrideBytes);
+            ////capDepthAverage.Depth.SetPixel
+
+            this._lstDepthCaptures.Clear();
+            
+            this._bSaveAverageFlag = true;
+
             MessageBox.Show("sdfsdsdfsdfsdf: " + strInfo);
         }
 
