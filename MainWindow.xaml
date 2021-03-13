@@ -41,40 +41,55 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
+        
+        <Image Grid.Row="0" Source="Images\Logo.png" HorizontalAlignment="Left" Height="32" Width="81" Margin="0 10 0 5" />
 
-        <WrapPanel Grid.Row="0" Orientation="Horizontal">
+        <Viewbox Grid.Row="1" HorizontalAlignment="Center">
+            <Grid Name="CompositeImage">
+                <!-- <Image Source="{Binding ImageSource}" Stretch="UniformToFill" /> -->
+                <Border BorderThickness="2" Padding="2" Margin="1">
+                    <Image Name="KinectImage" Source="{Binding CurrentCameraImage}" Stretch="UniformToFill"
+                       MouseLeave="mouseLeaveFromStream" MouseMove="mouseMoveOverStream" />
+                 </Border>
+                <!--<Image Name="KinectImage" Stretch="UniformToFill" MouseLeave="mouseLeaveFromStream" /> -->
+            </Grid>
+        </Viewbox>
+        <WrapPanel Grid.Row="2" Orientation="Horizontal">
             <WrapPanel.Resources>
                 <Style TargetType="{x:Type Label}">
                     <Setter Property="Margin" Value="10,0" />
                     <Setter Property="Padding" Value="10,10" />
                 </Style>
             </WrapPanel.Resources>
-            <Image Grid.Row="0" Source="Images\Logo.png" HorizontalAlignment="Left" Height="32" Width="81" Margin="0 10 0 5" />
-            <Label x:Name="lblDene" Content="Label" HorizontalAlignment="Left"
-               VerticalAlignment="Top" Width="275" Height="40"/>
-            <ComboBox ItemsSource="{Binding Path=Outputs}" SelectedItem="{Binding Path=SelectedOutput}" DisplayMemberPath="Name" />
+
+            <ComboBox ItemsSource="{Binding Path=Outputs}" SelectedItem="{Binding Path=SelectedOutput}" DisplayMemberPath="Name" Height="40" />
+            <Label x:Name="lblInfo" Content="Label" HorizontalAlignment="Left"
+               VerticalAlignment="Top" Width="325" Height="40" Background="AliceBlue"/>
+
             <Label x:Name="lblPos" HorizontalAlignment="Left"
-               VerticalAlignment="Top" Width="215" Height="40" Background="Aquamarine"/>
-            <Label x:Name="lblDene3" Width="275" Height="40" Background="Bisque"/>
+               VerticalAlignment="Top" Width="215" Height="40" Background="BlanchedAlmond"/>
+            <!--<Label x:Name="lblDene3" Width="275" Height="40" Background="Bisque"/> -->
 
         </WrapPanel>
-        
-
-        <Viewbox Grid.Row="1" HorizontalAlignment="Center">
-            <Grid Name="CompositeImage">
-                <!-- <Image Source="{Binding ImageSource}" Stretch="UniformToFill" /> -->
-                <Image Name="KinectImage" Source="{Binding CurrentCameraImage}" Stretch="UniformToFill"
-                       MouseLeave="mouseLeaveFromStream" MouseMove="mouseMoveOverStream" />
-                <!--<Image Name="KinectImage" Stretch="UniformToFill" MouseLeave="mouseLeaveFromStream" /> -->
-            </Grid>
-        </Viewbox>
 
 
-        <StatusBar Grid.Row="2" HorizontalAlignment="Left" Name="statusBar" VerticalAlignment="Center" Background="Transparent" Foreground="{StaticResource MediumGreyBrush}">
-            <StatusBarItem Content="{Binding StatusText}" FontFamily="Segoe UI" FontSize="18"/>
+        <!--<WrapPanel Grid.Row="3" Orientation="Horizontal">
+            <WrapPanel.Resources>
+                <Style TargetType="{x:Type Label}">
+                    <Setter Property="Margin" Value="10,0" />
+                    <Setter Property="Padding" Value="10,10" />
+                </Style>
+            </WrapPanel.Resources>
+        </WrapPanel>-->
+
+        <StatusBar Grid.Row="3" HorizontalAlignment="Left" Name="statusBar" VerticalAlignment="Center" Background="Transparent" Foreground="{StaticResource MediumGreyBrush}">
+            <StatusBarItem Content="{Binding StatusText}" FontFamily="Segoe UI" FontSize="16"/>
         </StatusBar>
-        <Button Grid.Row="2" Style="{StaticResource ScreenshotButton}" Content="Screenshot" Height="Auto" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10 10 0 10" Click="ScreenshotButton_Click" />
-
+        <WrapPanel Grid.Row="3" HorizontalAlignment="Right" >
+            <Button Grid.Row="3" Style="{StaticResource ScreenshotButton}" Content="Save Average" Height="Auto" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10 10 0 10" Click="SaveAverage_Click" />
+            <Button Grid.Row="3" Style="{StaticResource ScreenshotButton}" Content="Screenshot" Height="Auto" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10 10 0 10" Click="ScreenshotButton_Click" />
+        </WrapPanel>
     </Grid>
 </Window>

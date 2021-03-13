@@ -62,7 +62,7 @@ namespace K4ACalibration
 
         private int yPosImage = 0;
 
-        private long counter = 0;
+        private long _nCaptureCounter = 0;
 
         /// <summary> Initializes a new instance of the MainWindow class. </summary>
         public MainWindow()
@@ -75,7 +75,6 @@ namespace K4ACalibration
             };
 
             SelectedOutput = Outputs.First();
-
             //this.KinectImage.MouseMove += KinectImage_MouseMove;
 
             // Open the default device
@@ -96,57 +95,174 @@ namespace K4ACalibration
             this.DataContext = this;
             //this.KinectImage.MouseMove += this.mouseMoveOverStream;
             //this.KinectImage.MouseLeave += this.mouseLeaveFromStream;
-            this.InitializeComponent();            
+            this.InitializeComponent();
             this._uiContext = SynchronizationContext.Current;
+            return;
         }
 
-        /// <summary> Gets the bitmap to display </summary>
-        public ImageSource ImageSource
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            get
+            while (running)
             {
-                return this._bitmap;
-            }
-            set { this._bitmap = value; }
-        }
-
-        /// <summary> Gets or sets the current status text to display </summary>
-        public string StatusText
-        {
-            get
-            {
-                return this.statusText;
-            }
-
-            set
-            {
-                if (this.statusText != value)
+                using (Capture capture = await Task.Run(() => { return this.kinect.GetCapture(); }))
                 {
-                    this.statusText = value;
-
-                    if (this.PropertyChanged != null)
+                    this._nCaptureCounter++;
+                    switch (SelectedOutput.OutputType)
                     {
-                        this.PropertyChanged(this, new PropertyChangedEventArgs("StatusText"));
+                        case OutputType.Depth:
+                            lblInfo.Content = "DEPTH " + capture.Depth.WidthPixels + " X "
+                                    + capture.Depth.HeightPixels + ", Format: " + capture.Depth.Format + ", Count: " + this._nCaptureCounter;
+
+                            //Memory<byte> sa = capture.Depth.Memory;
+                            //lblDene.Content = sa.Length;
+                            //updateMemory(sa);
+                            //capture.Depth.SetPixel()
+
+                            _uiContext.Send(x =>
+                            {
+                                //Image dd = updateImage(capture.Depth);
+                                //GeneralUtil.updateImage(capture.Depth);
+                                //_bitmap = capture.Depth.CreateBitmapSource();
+
+                                Image dd = GeneralUtil.updateImage(capture.Depth);
+                                _bitmap = dd.CreateBitmapSource();
+
+                                //Image dd = updateImage(capture.Depth);
+                                //_bitmap = dd.CreateBitmapSource();
+
+                                //for (int i = 0; i < 100; i++)
+                                //{
+                                //    for (int j = 0; j < 100; j++)
+                                //    {
+                                //        //capture.Depth.SetPixel(i, j, (int)rnd.Next(180, 255));
+                                //        capture.Depth.SetPixel(i, j, 0xFFFFFFFF);
+                                //    }
+                                //}
+                                //_bitmap = capture.Depth.CreateBitmapSource();
+
+                                _bitmap.Freeze();
+                            }, null);
+
+                            if (this.KinectImage.IsMouseOver)
+                            {
+                                if (capture.Depth.WidthPixels > xPosImage && capture.Depth.HeightPixels > yPosImage)
+                                {
+                                    short sPixelValue = capture.Depth.GetPixel<short>(yPosImage, xPosImage);
+                                    this.lblPos.Content = String.Format("x:{0, -3}, y:{1, -3}, val: {2, -5} ", xPosImage, yPosImage, sPixelValue);
+                                }
+                            }
+
+                            break;
+                        case OutputType.IR:
+                            //PresentIR(capture);
+                            //BitmapSource bmpsInfraRed = capture.IR.CreateBitmapSource();
+                            //bmpsInfraRed.Freeze();
+                            lblInfo.Content = "IR width: " + capture.IR.WidthPixels + " height: "
+                                    + capture.IR.HeightPixels + " format:" + capture.IR.Format;
+
+                            _uiContext.Send(x =>
+                            {
+                                _bitmap = capture.IR.CreateBitmapSource();
+                                _bitmap.Freeze();
+                            }, null);
+
+                            if (this.KinectImage.IsMouseOver)
+                            {
+                                //int nArrayPos = yPosImage * capture.IR.WidthPixels + xPosImage;
+                                //if (capture.IR.Memory.Length > nArrayPos)
+                                if (capture.IR.WidthPixels > xPosImage && capture.IR.HeightPixels > yPosImage)
+                                {
+                                    short sPixelValue = capture.IR.GetPixel<short>(yPosImage, xPosImage);
+                                    this.lblPos.Content = String.Format("x:{0, -3}, y:{1, -3}, val: {2, -5} ", xPosImage, yPosImage, sPixelValue);
+
+                                } // end of if
+                            }
+
+                            break;
+                        case OutputType.Colour:
+                        default:
+                            //PresentColour(capture);
+                            lblInfo.Content = "Color width: " + capture.Color.WidthPixels + " height: "
+                                    + capture.Color.HeightPixels + " format:" + capture.Color.Format;
+
+                            _uiContext.Send(x =>
+                            {
+                                _bitmap = capture.Color.CreateBitmapSource();
+                                _bitmap.Freeze();
+                            }, null);
+
+                            if (this.KinectImage.IsMouseOver)
+                            {
+                                if (capture.Color.WidthPixels > xPosImage && capture.Color.HeightPixels > yPosImage)
+                                {
+                                    int nPixelValue = capture.Color.GetPixel<int>(yPosImage, xPosImage);
+                                    int nRedValue = nPixelValue >> 16 & 0x000000FF;
+                                    int nGreenValue = nPixelValue >> 8 & 0x000000FF;
+                                    int nBlueValue = nPixelValue & 0x000000FF;
+                                    this.lblPos.Content = String.Format("x:{0, -4}, y:{1, -4}," +
+                                        "  red: {2,-3}, g: {3,-3}, b: {4,-3}  ", xPosImage, yPosImage, nRedValue, nGreenValue, nBlueValue);
+                                } // end of if
+                            }
+
+                            //this.StatusText = "Received Capture: " + capture.Depth.DeviceTimestamp;
+                            //this.bitmap.Lock();
+                            //var color = capture.Color;
+                            //var region = new Int32Rect(0, 0, color.WidthPixels, color.HeightPixels);
+                            //unsafe                 //{
+                            //    using (var pin = color.Memory.Pin()) {
+                            //        this.bitmap.WritePixels(region, (IntPtr)pin.Pointer, (int)color.Size, color.StrideBytes);
+                            //    } }
+                            //this.bitmap.AddDirtyRect(region);
+                            //this.bitmap.Unlock();
+                            break;
                     }
+
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("CurrentCameraImage"));
+
+                    //this.StatusText = "Received Capture: " + capture.Depth.DeviceTimestamp;
+                    //this.bitmap.Lock();
+                    //var color = capture.Color;
+                    //var region = new Int32Rect(0, 0, color.WidthPixels, color.HeightPixels);
+                    //unsafe
+                    //{
+                    //    using (var pin = color.Memory.Pin())
+                    //    {
+                    //        this.bitmap.WritePixels(region, (IntPtr)pin.Pointer, (int)color.Size, color.StrideBytes);
+                    //    }
+                    //}
+                    //this.bitmap.AddDirtyRect(region);
+                    //this.bitmap.Unlock();
                 }
-            }
-        }
-
-        /// <summary>
-        /// Execute shutdown tasks
-        /// </summary>
-        /// <param name="sender">object sending the event</param>
-        /// <param name="e">event arguments</param>
-        private void MainWindow_Closing(object sender, CancelEventArgs e)
-        {
-            running = false;
-
-            if (this.kinect != null)
-            {
-                this.kinect.Dispose();
             }
             return;
         }
+
+        void mouseLeaveFromStream(Object sender, MouseEventArgs e)
+        {
+            this.lblPos.Content = "";
+            return;
+        }
+
+        void mouseMoveOverStream(Object sender, MouseEventArgs e)
+        {
+            //this.lblPos.Content = "x: " + (int)Mouse.GetPosition(this.KinectImage).X
+            //    + " y: " + (int)Mouse.GetPosition(this.KinectImage).Y + " counter: " + counter ;
+            //this.yPosRgbIrStream = (int)Mouse.GetPosition(this.imgLeft).Y;
+            this.xPosImage = (int)Mouse.GetPosition(this.KinectImage).X;
+            this.yPosImage = (int)Mouse.GetPosition(this.KinectImage).Y;
+            return;
+        }
+
+        //void mouseMoveOverRightStream(Object sender, MouseEventArgs e)
+        //{
+        //    int xPos = (int)Mouse.GetPosition(this).X;
+        //    int yPos = (int)Mouse.GetPosition(this).Y;
+        //    int xPosRelToRightStream = (int)Mouse.GetPosition(this.imgRight).X;
+        //    int yPosRelToRightStream = (int)Mouse.GetPosition(this.imgRight).Y;
+        //    this.xPosDepthStream = (int)Mouse.GetPosition(this.imgRight).X;
+        //    this.yPosDepthStream = (int)Mouse.GetPosition(this.imgRight).Y;
+        //    return;
+        //}
 
         /// <summary>
         /// Handles the user clicking on the screenshot button
@@ -191,146 +307,26 @@ namespace K4ACalibration
             {
                 this.StatusText = string.Format(Properties.Resources.FailedScreenshotStatusTextFormat, path);
             }
+            return;
         }
 
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        private void SaveAverage_Click(object sender, RoutedEventArgs e)
         {
-            while (running)
+            MessageBox.Show("sdfsdsdfsdfsdf");
+        }
+
+        /// <summary>
+        /// Execute shutdown tasks
+        /// </summary>
+        /// <param name="sender">object sending the event</param>
+        /// <param name="e">event arguments</param>
+        private void MainWindow_Closing(object sender, CancelEventArgs e)
+        {
+            running = false;
+
+            if (this.kinect != null)
             {
-                using (Capture capture = await Task.Run(() => { return this.kinect.GetCapture(); }))
-                {
-                    counter++;
-                    switch (SelectedOutput.OutputType)
-                    {
-                        case OutputType.Depth:
-                            lblDene.Content = "Depth width: " + capture.Depth.WidthPixels + " height: "
-                                    + capture.Depth.HeightPixels + " format:" + capture.Depth.Format;
-
-                            //Memory<byte> sa = capture.Depth.Memory;
-                            //lblDene.Content = sa.Length;
-                            //updateMemory(sa);
-                            //capture.Depth.SetPixel()
-
-                            _uiContext.Send(x =>
-                            {
-                                //Image dd = updateImage(capture.Depth);
-                                //GeneralUtil.updateImage(capture.Depth);
-                                //_bitmap = capture.Depth.CreateBitmapSource();
-
-                                Image dd = GeneralUtil.updateImage(capture.Depth);
-                                _bitmap = dd.CreateBitmapSource();
-
-                                //Image dd = updateImage(capture.Depth);
-                                //_bitmap = dd.CreateBitmapSource();
-
-                                //for (int i = 0; i < 100; i++)
-                                //{
-                                //    for (int j = 0; j < 100; j++)
-                                //    {
-                                //        //capture.Depth.SetPixel(i, j, (int)rnd.Next(180, 255));
-                                //        capture.Depth.SetPixel(i, j, 0xFFFFFFFF);
-                                //    }
-                                //}
-                                //_bitmap = capture.Depth.CreateBitmapSource();
-                                
-                                _bitmap.Freeze();
-                            }, null);
-
-                            if (this.KinectImage.IsMouseOver)
-                            {
-                                if (capture.Depth.WidthPixels > xPosImage && capture.Depth.HeightPixels > yPosImage)
-                                {
-                                    short sPixelValue = capture.Depth.GetPixel<short>(yPosImage, xPosImage);
-                                    this.lblDene3.Content = String.Format("x:{0}, y:{1}," +
-                                            " val: {2} ", xPosImage, yPosImage, sPixelValue);
-                                }
-                            }
-
-                            break;
-                        case OutputType.IR:
-                            //PresentIR(capture);
-                            //BitmapSource bmpsInfraRed = capture.IR.CreateBitmapSource();
-                            //bmpsInfraRed.Freeze();
-
-                            _uiContext.Send(x =>
-                            {
-                                _bitmap = capture.IR.CreateBitmapSource();
-                                lblDene.Content = "IR width: " + capture.IR.WidthPixels + " height: "
-                                    + capture.IR.HeightPixels + " format:" + capture.IR.Format;
-                                _bitmap.Freeze();
-
-                            }, null);
-
-                            if (this.KinectImage.IsMouseOver)
-                            {
-                                //int nArrayPos = yPosImage * capture.IR.WidthPixels + xPosImage;
-                                //if (capture.IR.Memory.Length > nArrayPos)
-                                if (capture.IR.WidthPixels > xPosImage && capture.IR.HeightPixels > yPosImage)
-                                {
-                                    short sPixelValue = capture.IR.GetPixel<short>(yPosImage, xPosImage);
-                                    this.lblDene3.Content = String.Format("x:{0}, y:{1}," +
-                                        " val: {2} ", xPosImage, yPosImage, sPixelValue);
-                                    
-                                } // end of if
-                            }
-
-                            break;
-                        case OutputType.Colour:
-                        default:
-                            //PresentColour(capture);
-                            lblDene.Content = "color";
-
-                            _uiContext.Send(x =>
-                            {
-                                _bitmap = capture.Color.CreateBitmapSource();
-                                _bitmap.Freeze();
-                                lblDene.Content = "Color width: " + capture.Color.WidthPixels + " height: "
-                                    + capture.Color.HeightPixels + " format:" + capture.Color.Format;
-                            }, null);
-
-                            if (this.KinectImage.IsMouseOver)
-                            {
-                                if (capture.Color.WidthPixels > xPosImage && capture.Color.HeightPixels > yPosImage)
-                                {
-                                    int nPixelValue = capture.Color.GetPixel<int>(yPosImage, xPosImage);
-                                    int nRedValue = nPixelValue >> 16 & 0x000000FF;
-                                    int nGreenValue = nPixelValue >> 8 & 0x000000FF;
-                                    int nBlueValue = nPixelValue  & 0x000000FF;
-                                    this.lblDene3.Content = String.Format("x:{0}, y:{1}," +
-                                        "  red: {2}, g: {3}, b: {4}  ", xPosImage, yPosImage, nRedValue, nGreenValue, nBlueValue);
-
-                                } // end of if
-                            }
-
-                            //this.StatusText = "Received Capture: " + capture.Depth.DeviceTimestamp;
-                            //this.bitmap.Lock();
-                            //var color = capture.Color;
-                            //var region = new Int32Rect(0, 0, color.WidthPixels, color.HeightPixels);
-                            //unsafe                 //{
-                            //    using (var pin = color.Memory.Pin()) {
-                            //        this.bitmap.WritePixels(region, (IntPtr)pin.Pointer, (int)color.Size, color.StrideBytes);
-                            //    } }
-                            //this.bitmap.AddDirtyRect(region);
-                            //this.bitmap.Unlock();
-                            break;
-                    }
-
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("CurrentCameraImage"));
-
-                    //this.StatusText = "Received Capture: " + capture.Depth.DeviceTimestamp;
-                    //this.bitmap.Lock();
-                    //var color = capture.Color;
-                    //var region = new Int32Rect(0, 0, color.WidthPixels, color.HeightPixels);
-                    //unsafe
-                    //{
-                    //    using (var pin = color.Memory.Pin())
-                    //    {
-                    //        this.bitmap.WritePixels(region, (IntPtr)pin.Pointer, (int)color.Size, color.StrideBytes);
-                    //    }
-                    //}
-                    //this.bitmap.AddDirtyRect(region);
-                    //this.bitmap.Unlock();
-                }
+                this.kinect.Dispose();
             }
             return;
         }
@@ -345,36 +341,37 @@ namespace K4ACalibration
             }
         }
 
-        void mouseLeaveFromStream(Object sender, MouseEventArgs e)
+        /// <summary> Gets the bitmap to display </summary>
+        public ImageSource ImageSource
         {
-            this.lblPos.Content = "";
-            return;
+            get
+            {
+                return this._bitmap;
+            }
+            set { this._bitmap = value; }
         }
 
-        void mouseMoveOverStream(Object sender, MouseEventArgs e)
+        /// <summary> Gets or sets the current status text to display </summary>
+        public string StatusText
         {
-            this.lblPos.Content = "x: " + (int)Mouse.GetPosition(this.KinectImage).X
-                + " y: " + (int)Mouse.GetPosition(this.KinectImage).Y + " counter: " + counter ;
-            //this.yPosRgbIrStream = (int)Mouse.GetPosition(this.imgLeft).Y;
+            get
+            {
+                return this.statusText;
+            }
 
-            this.xPosImage = (int) Mouse.GetPosition(this.KinectImage).X;
-            this.yPosImage = (int) Mouse.GetPosition(this.KinectImage).Y;
-            return;
+            set
+            {
+                if (this.statusText != value)
+                {
+                    this.statusText = value;
+
+                    if (this.PropertyChanged != null)
+                    {
+                        this.PropertyChanged(this, new PropertyChangedEventArgs("StatusText"));
+                    }
+                }
+            }
         }
-
-        //void mouseMoveOverRightStream(Object sender, MouseEventArgs e)
-        //{
-        //    int xPos = (int)Mouse.GetPosition(this).X;
-        //    int yPos = (int)Mouse.GetPosition(this).Y;
-
-        //    int xPosRelToRightStream = (int)Mouse.GetPosition(this.imgRight).X;
-        //    int yPosRelToRightStream = (int)Mouse.GetPosition(this.imgRight).Y;
-
-        //    this.xPosDepthStream = (int)Mouse.GetPosition(this.imgRight).X;
-        //    this.yPosDepthStream = (int)Mouse.GetPosition(this.imgRight).Y;
-            
-        //    return;
-        //}
     }
 
     public enum OutputType
@@ -390,5 +387,4 @@ namespace K4ACalibration
 
         public OutputType OutputType { get; set; }
     }
-
 }
