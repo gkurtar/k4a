@@ -100,6 +100,14 @@ namespace K4ACalibration
             return;
         }
 
+        private static readonly int CAPTURE_CAPACITY = 10;
+
+        private readonly List<Capture> _lstDepthCaptures = new List<Capture>();
+
+        private readonly List<Capture> _lstIrCaptures = new List<Capture>();
+
+        private readonly List<Capture> _lstRgbCaptures = new List<Capture>();
+
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             while (running)
@@ -118,12 +126,14 @@ namespace K4ACalibration
                             //updateMemory(sa);
                             //capture.Depth.SetPixel()
 
+                            if (_lstDepthCaptures.Count == CAPTURE_CAPACITY)
+                            {
+                                _lstDepthCaptures.RemoveAt(0);
+                            }
+                            _lstDepthCaptures.Add(capture.Reference());
+
                             _uiContext.Send(x =>
                             {
-                                //Image dd = updateImage(capture.Depth);
-                                //GeneralUtil.updateImage(capture.Depth);
-                                //_bitmap = capture.Depth.CreateBitmapSource();
-
                                 Image dd = GeneralUtil.updateImage(capture.Depth);
                                 _bitmap = dd.CreateBitmapSource();
 
@@ -159,6 +169,8 @@ namespace K4ACalibration
                             //bmpsInfraRed.Freeze();
                             lblInfo.Content = "IR width: " + capture.IR.WidthPixels + " height: "
                                     + capture.IR.HeightPixels + " format:" + capture.IR.Format;
+
+                            //capture;
 
                             _uiContext.Send(x =>
                             {
@@ -253,16 +265,6 @@ namespace K4ACalibration
             return;
         }
 
-        //void mouseMoveOverRightStream(Object sender, MouseEventArgs e)
-        //{
-        //    int xPos = (int)Mouse.GetPosition(this).X;
-        //    int yPos = (int)Mouse.GetPosition(this).Y;
-        //    int xPosRelToRightStream = (int)Mouse.GetPosition(this.imgRight).X;
-        //    int yPosRelToRightStream = (int)Mouse.GetPosition(this.imgRight).Y;
-        //    this.xPosDepthStream = (int)Mouse.GetPosition(this.imgRight).X;
-        //    this.yPosDepthStream = (int)Mouse.GetPosition(this.imgRight).Y;
-        //    return;
-        //}
 
         /// <summary>
         /// Handles the user clicking on the screenshot button
@@ -312,7 +314,14 @@ namespace K4ACalibration
 
         private void SaveAverage_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("sdfsdsdfsdfsdf");
+            String strInfo = "";
+            int count = this._lstDepthCaptures.Count;
+            foreach (Capture aPart in this._lstDepthCaptures)
+            {
+                long lTimes = aPart.Depth.SystemTimestampNsec;
+                strInfo += lTimes + " _ ";
+            }
+            MessageBox.Show("sdfsdsdfsdfsdf: " + strInfo);
         }
 
         /// <summary>
