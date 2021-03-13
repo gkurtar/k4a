@@ -10,7 +10,7 @@ namespace K4ACalibration
 {
     public static class ImageExtensions
     {
-        public static BitmapSource CreateBitmapSource(this Image image, double dpiX = 300, double dpiY = 300)
+        public static BitmapSource CreateBitmapSource(this Image image, double dpiX = 96, double dpiY = 96)
         {
             PixelFormat pixelFormat;
 
@@ -49,6 +49,7 @@ namespace K4ACalibration
                                     (IntPtr)pin.Pointer,
                                     checked((int)reference.Size),
                                     reference.StrideBytes);
+
                         return source;
                     }
                 }

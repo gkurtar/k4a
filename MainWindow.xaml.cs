@@ -46,6 +46,24 @@ namespace K4ACalibration
         /// <summary> Status of the application </summary>
         private bool running = true;
 
+        private SynchronizationContext _uiContext;
+
+        private OutputOption _selectedOutput;
+        public ObservableCollection<OutputOption> Outputs { get; set; }
+
+        private ImageSource _bitmap;
+
+        /// <summary> INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public ImageSource CurrentCameraImage => _bitmap;
+
+        private int xPosImage = 0;
+
+        private int yPosImage = 0;
+
+        private long counter = 0;
+
         /// <summary> Initializes a new instance of the MainWindow class. </summary>
         public MainWindow()
         {
@@ -82,12 +100,6 @@ namespace K4ACalibration
             this._uiContext = SynchronizationContext.Current;
         }
 
-
-        /// <summary>
-        /// INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data
-        /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
-
         /// <summary> Gets the bitmap to display </summary>
         public ImageSource ImageSource
         {
@@ -98,13 +110,7 @@ namespace K4ACalibration
             set { this._bitmap = value; }
         }
 
-        private ImageSource _bitmap;
-
-        public ImageSource CurrentCameraImage => _bitmap;
-
-        /// <summary>
-        /// Gets or sets the current status text to display
-        /// </summary>
+        /// <summary> Gets or sets the current status text to display </summary>
         public string StatusText
         {
             get
@@ -139,6 +145,7 @@ namespace K4ACalibration
             {
                 this.kinect.Dispose();
             }
+            return;
         }
 
         /// <summary>
@@ -192,6 +199,7 @@ namespace K4ACalibration
             {
                 using (Capture capture = await Task.Run(() => { return this.kinect.GetCapture(); }))
                 {
+                    counter++;
                     switch (SelectedOutput.OutputType)
                     {
                         case OutputType.Depth:
@@ -223,11 +231,20 @@ namespace K4ACalibration
                                 //        capture.Depth.SetPixel(i, j, 0xFFFFFFFF);
                                 //    }
                                 //}
-
                                 //_bitmap = capture.Depth.CreateBitmapSource();
                                 
                                 _bitmap.Freeze();
                             }, null);
+
+                            if (this.KinectImage.IsMouseOver)
+                            {
+                                if (capture.Depth.WidthPixels > xPosImage && capture.Depth.HeightPixels > yPosImage)
+                                {
+                                    short sPixelValue = capture.Depth.GetPixel<short>(yPosImage, xPosImage);
+                                    this.lblDene3.Content = String.Format("x:{0}, y:{1}," +
+                                            " val: {2} ", xPosImage, yPosImage, sPixelValue);
+                                }
+                            }
 
                             break;
                         case OutputType.IR:
@@ -241,7 +258,21 @@ namespace K4ACalibration
                                 lblDene.Content = "IR width: " + capture.IR.WidthPixels + " height: "
                                     + capture.IR.HeightPixels + " format:" + capture.IR.Format;
                                 _bitmap.Freeze();
+
                             }, null);
+
+                            if (this.KinectImage.IsMouseOver)
+                            {
+                                //int nArrayPos = yPosImage * capture.IR.WidthPixels + xPosImage;
+                                //if (capture.IR.Memory.Length > nArrayPos)
+                                if (capture.IR.WidthPixels > xPosImage && capture.IR.HeightPixels > yPosImage)
+                                {
+                                    short sPixelValue = capture.IR.GetPixel<short>(yPosImage, xPosImage);
+                                    this.lblDene3.Content = String.Format("x:{0}, y:{1}," +
+                                        " val: {2} ", xPosImage, yPosImage, sPixelValue);
+                                    
+                                } // end of if
+                            }
 
                             break;
                         case OutputType.Colour:
@@ -256,7 +287,21 @@ namespace K4ACalibration
                                 lblDene.Content = "Color width: " + capture.Color.WidthPixels + " height: "
                                     + capture.Color.HeightPixels + " format:" + capture.Color.Format;
                             }, null);
-                            
+
+                            if (this.KinectImage.IsMouseOver)
+                            {
+                                if (capture.Color.WidthPixels > xPosImage && capture.Color.HeightPixels > yPosImage)
+                                {
+                                    int nPixelValue = capture.Color.GetPixel<int>(yPosImage, xPosImage);
+                                    int nRedValue = nPixelValue >> 16 & 0x000000FF;
+                                    int nGreenValue = nPixelValue >> 8 & 0x000000FF;
+                                    int nBlueValue = nPixelValue  & 0x000000FF;
+                                    this.lblDene3.Content = String.Format("x:{0}, y:{1}," +
+                                        "  red: {2}, g: {3}, b: {4}  ", xPosImage, yPosImage, nRedValue, nGreenValue, nBlueValue);
+
+                                } // end of if
+                            }
+
                             //this.StatusText = "Received Capture: " + capture.Depth.DeviceTimestamp;
                             //this.bitmap.Lock();
                             //var color = capture.Color;
@@ -290,20 +335,6 @@ namespace K4ACalibration
             return;
         }
 
-        private BitmapSource colorizeDepthData(BitmapSource aobjBitmapSource)
-        {
-            Image aa = new Image(ImageFormat.ColorBGRA32, 12, 43);
-            //Memory<TPixel> p = aa.GetPixels();
-            //aobjBitmapSource.
-            return aobjBitmapSource;
-        }
-
-        private SynchronizationContext _uiContext;
-
-        private OutputOption _selectedOutput;
-
-        public ObservableCollection<OutputOption> Outputs { get; set; }
-
         public OutputOption SelectedOutput
         {
             get => _selectedOutput;
@@ -316,15 +347,18 @@ namespace K4ACalibration
 
         void mouseLeaveFromStream(Object sender, MouseEventArgs e)
         {
-            this.lblDene2.Content = "sdfsd ";
+            this.lblPos.Content = "";
             return;
         }
 
         void mouseMoveOverStream(Object sender, MouseEventArgs e)
         {
-            this.lblDene2.Content = "x: " + (int)Mouse.GetPosition(this.KinectImage).X
-                + " y: " + (int)Mouse.GetPosition(this.KinectImage).Y;
+            this.lblPos.Content = "x: " + (int)Mouse.GetPosition(this.KinectImage).X
+                + " y: " + (int)Mouse.GetPosition(this.KinectImage).Y + " counter: " + counter ;
             //this.yPosRgbIrStream = (int)Mouse.GetPosition(this.imgLeft).Y;
+
+            this.xPosImage = (int) Mouse.GetPosition(this.KinectImage).X;
+            this.yPosImage = (int) Mouse.GetPosition(this.KinectImage).Y;
             return;
         }
 

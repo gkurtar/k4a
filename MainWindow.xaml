@@ -44,12 +44,19 @@
         </Grid.RowDefinitions>
 
         <WrapPanel Grid.Row="0" Orientation="Horizontal">
+            <WrapPanel.Resources>
+                <Style TargetType="{x:Type Label}">
+                    <Setter Property="Margin" Value="10,0" />
+                    <Setter Property="Padding" Value="10,10" />
+                </Style>
+            </WrapPanel.Resources>
             <Image Grid.Row="0" Source="Images\Logo.png" HorizontalAlignment="Left" Height="32" Width="81" Margin="0 10 0 5" />
             <Label x:Name="lblDene" Content="Label" HorizontalAlignment="Left"
                VerticalAlignment="Top" Width="275" Height="40"/>
             <ComboBox ItemsSource="{Binding Path=Outputs}" SelectedItem="{Binding Path=SelectedOutput}" DisplayMemberPath="Name" />
-            <Label x:Name="lblDene2" HorizontalAlignment="Left"
+            <Label x:Name="lblPos" HorizontalAlignment="Left"
                VerticalAlignment="Top" Width="215" Height="40" Background="Aquamarine"/>
+            <Label x:Name="lblDene3" Width="275" Height="40" Background="Bisque"/>
 
         </WrapPanel>
         
