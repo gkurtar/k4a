@@ -43,6 +43,10 @@ namespace K4ACalibration
         /// <summary> The height in pixels of the color image from the Azure Kinect DK </summary>
         private readonly int colorHeight = 0;
 
+        private readonly int depthWidth = 0;
+
+        private readonly int depthHeight = 0;
+
         /// <summary> Status of the application </summary>
         private bool running = true;
 
@@ -93,6 +97,10 @@ namespace K4ACalibration
 
             this.colorWidth = this.kinect.GetCalibration().ColorCameraCalibration.ResolutionWidth;
             this.colorHeight = this.kinect.GetCalibration().ColorCameraCalibration.ResolutionHeight;
+
+            this.depthWidth = this.kinect.GetCalibration().DepthCameraCalibration.ResolutionWidth;
+            this.depthHeight = this.kinect.GetCalibration().DepthCameraCalibration.ResolutionHeight;
+
             this.bitmap = new WriteableBitmap(colorWidth, colorHeight, 96.0, 96.0, PixelFormats.Bgra32, null);
             this.DataContext = this;
             //this.KinectImage.MouseMove += this.mouseMoveOverStream;
@@ -121,7 +129,9 @@ namespace K4ACalibration
                     {
                         case OutputType.Depth:
                             lblInfo.Content = "DEPTH " + capture.Depth.WidthPixels + " X "
-                                    + capture.Depth.HeightPixels + ", Format: " + capture.Depth.Format
+                                    + capture.Depth.HeightPixels
+                                    + ", DEPTH DIM " + depthWidth + " =X= " + depthHeight
+                                    + ", Format: " + capture.Depth.Format
                                     + ", Count: " + this._nCaptureCounter + ", flag? " + _bSaveAverageFlag;
 
                             //Memory<byte> sa = capture.Depth.Memory;
@@ -336,27 +346,147 @@ namespace K4ACalibration
             //capDepthAverage.Depth = new Image(tempRef.Depth.Format, tempRef.Depth.WidthPixels, tempRef.Depth.HeightPixels, tempRef.Depth.StrideBytes);
             ////capDepthAverage.Depth.SetPixel
             this._lstDepthCaptures.Clear();
+            this._lstIrCaptures.Clear();
+            this._lstRgbCaptures.Clear();
             //this._bSaveAverageFlag = true;
-            MessageBox.Show("sdfsdsdfsdfsdf: " + strInfo + " flag:" + _bSaveAverageFlag);
-            Thread td = new Thread(new ThreadStart(doWork));
+            //MessageBox.Show("sdfsdsdfsdfsdf: " + strInfo + " flag:" + _bSaveAverageFlag);
+            Thread thdSaveAvg = new Thread(new ThreadStart(saveAverageCapture));
             //autoReset.Reset();
-            td.Start();
+            thdSaveAvg.Start();
             return;
         }
 
-        AutoResetEvent autoReset = new AutoResetEvent(false);
+        private readonly AutoResetEvent autoReset = new AutoResetEvent(false);
 
-        private void doWork()
+        private void saveAverageCapture()
         {
             Console.WriteLine(Thread.CurrentThread.Name + " is started!");
             this._bSaveAverageFlag = true;
             MessageBox.Show("sta, count: " + this._lstDepthCaptures.Count + ", " + this._bSaveAverageFlag);
             autoReset.WaitOne();
+
+            switch (SelectedOutput.OutputType)
+            {
+                case OutputType.Depth:
+
+                    if (this._lstDepthCaptures.Count >= CAPTURE_CAPACITY) {
+                        Capture cptSample = this._lstDepthCaptures.ElementAt(0);
+                        Capture cptDepthAverage = new Capture();
+                        cptDepthAverage.Depth = new Image(cptSample.Depth.Format, cptSample.Depth.WidthPixels,
+                            cptSample.Depth.HeightPixels, cptSample.Depth.StrideBytes);
+                        cptDepthAverage.Depth.WhiteBalance = cptSample.Depth.WhiteBalance;
+                        cptDepthAverage.Depth.DeviceTimestamp = cptSample.Depth.DeviceTimestamp;
+                        cptDepthAverage.Depth.SystemTimestampNsec = cptSample.Depth.SystemTimestampNsec;
+
+                        //foreach (Capture cptDepth in this._lstDepthCaptures) {
+                        //    //long lTimes = aPart.Depth.SystemTimestampNsec;
+                        //    //strInfo += lTimes + " _ ";
+                        //}
+                        short sValue = 0;
+                        short sTotal = 0;
+                        short sCount = 0;
+                        int index = 0;
+                        float[,] depthVals = new float[depthHeight, depthWidth];
+                        float[,,] depthAll = new float[this._lstDepthCaptures.Count, depthHeight, depthWidth];
+                        for (int i = 0; i < depthHeight; i++) {
+                            for (int j = 0; j < depthWidth; j++) {
+                                sTotal = sCount = 0;
+                                index = 0;
+                                foreach (Capture cptDepth in this._lstDepthCaptures) {
+                                    sValue = cptDepth.Depth.GetPixel<short>(i, j);
+                                    if (sValue > 0) {
+                                        sTotal += sValue;
+                                        sCount++;
+                                    }
+                                    depthAll[index, i, j] = sValue;
+                                    index++;
+                                }
+                                depthVals[i, j] = sCount == 0 ? 0 : sTotal / (float)sCount;
+                            } // end of for
+                        } // end of for
+
+
+                        saveDepthDataToFile(depthVals);
+                        Thread.Sleep(1000);
+                        for (int i = 0; i < this._lstDepthCaptures.Count; i++) {
+                            //saveDepthDataToFile(depthAll[i]);
+                        }
+                    }
+
+                    break;
+                case OutputType.IR:
+                    
+                    break;
+                case OutputType.Colour:
+                default:
+                    //lblInfo.Content = "Color " + capture.Color.WidthPixels + " X "
+                    //        + capture.Color.HeightPixels + ", Format: " + capture.Color.Format + ", Count: " + this._nCaptureCounter;
+                    saveImageToFile(this._lstRgbCaptures.ElementAt(0).Color);
+                    break;
+            }
+
+
+
+
+
+
+
+
+
             MessageBox.Show("end, count: " + this._lstDepthCaptures.Count + ", " + this._bSaveAverageFlag);
             //MessageBox.Show("end");
             Console.WriteLine(Thread.CurrentThread.Name + " is ended!");
             return;
 
+        }
+
+        private void saveImageToFile(Image acptSave) {
+
+            String strType = SelectedOutput.OutputType.ToString();
+            BitmapEncoder encoder = new PngBitmapEncoder();
+            //encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
+            encoder.Frames.Add(BitmapFrame.Create(acptSave.CreateBitmapSource()));
+
+            string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
+            string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+            string path = Path.Combine(myPhotos, "KinectScreenshot_" + strType + "-" + time + ".png");
+
+            // Write the new file to disk
+            try {
+                using (FileStream fs = new FileStream(path, FileMode.Create)) {
+                    encoder.Save(fs);
+                }
+                this.StatusText = string.Format(Properties.Resources.SavedScreenshotStatusTextFormat, path);
+            } catch (IOException) {
+                this.StatusText = string.Format(Properties.Resources.FailedScreenshotStatusTextFormat, path);
+            }
+            return;
+        }
+
+        private void saveDepthDataToFile(float[,] aseqPoints) {
+            string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
+            string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+            string pathDepth = System.IO.Path.Combine(myPhotos, "Depth" + time + ".txt");
+
+            // write the new file to disk
+            try {
+                using (StreamWriter sw = new StreamWriter(pathDepth)) {
+                    // loop over each row and column of the depth
+                    for (int x = 0; x < depthHeight; ++x) {
+                        for (int y = 0; y < depthWidth; ++y) {
+                            // calculate index into depth array
+                            sw.WriteLine(x + " " + y + " " + aseqPoints[x, y]);
+                        }
+                    }
+                }
+
+                this.StatusText = string.Format(CultureInfo.InvariantCulture, "{0} Saved depth data to {1}",
+                    Properties.Resources.SavedScreenshotStatusTextFormat, pathDepth);
+
+            } catch (IOException) {
+                this.StatusText = string.Format(CultureInfo.InvariantCulture, "{0}", Properties.Resources.FailedScreenshotStatusTextFormat);
+            }
+            return;
         }
 
         /// <summary>
