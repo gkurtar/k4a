@@ -134,6 +134,7 @@ namespace K4ACalibration
                                 if (_lstDepthCaptures.Count >= CAPTURE_CAPACITY)
                                 {
                                     this._bSaveAverageFlag = false;
+                                    autoReset.Set();
                                 }
                                 this._lstDepthCaptures.Add(capture.Reference());
                             }
@@ -163,11 +164,21 @@ namespace K4ACalibration
                             lblInfo.Content = "IR " + capture.IR.WidthPixels + " X "
                                     + capture.IR.HeightPixels + ", Format: " + capture.IR.Format + ", Count: " + this._nCaptureCounter;
 
-                            if (_lstIrCaptures.Count == CAPTURE_CAPACITY)
+                            //if (_lstIrCaptures.Count == CAPTURE_CAPACITY)
+                            //{
+                            //    _lstIrCaptures.RemoveAt(0);
+                            //}
+                            //_lstIrCaptures.Add(capture.Reference());
+
+                            if (this._bSaveAverageFlag)
                             {
-                                _lstIrCaptures.RemoveAt(0);
+                                if (_lstIrCaptures.Count >= CAPTURE_CAPACITY)
+                                {
+                                    this._bSaveAverageFlag = false;
+                                    autoReset.Set();
+                                }
+                                this._lstIrCaptures.Add(capture.Reference());
                             }
-                            _lstIrCaptures.Add(capture.Reference());
 
                             _uiContext.Send(x =>
                             {
@@ -192,11 +203,15 @@ namespace K4ACalibration
                             lblInfo.Content = "Color " + capture.Color.WidthPixels + " X "
                                     + capture.Color.HeightPixels + ", Format: " + capture.Color.Format + ", Count: " + this._nCaptureCounter;
                             
-                            if (_lstRgbCaptures.Count == CAPTURE_CAPACITY)
+                            if (this._bSaveAverageFlag)
                             {
-                                _lstRgbCaptures.RemoveAt(0);
+                                if (_lstRgbCaptures.Count >= CAPTURE_CAPACITY)
+                                {
+                                    this._bSaveAverageFlag = false;
+                                    autoReset.Set();
+                                }
+                                this._lstRgbCaptures.Add(capture.Reference());
                             }
-                            _lstRgbCaptures.Add(capture.Reference());
 
                             _uiContext.Send(x =>
                             {
@@ -276,23 +291,18 @@ namespace K4ACalibration
             // Create a render target to which we'll render our composite image
             RenderTargetBitmap renderBitmap = new RenderTargetBitmap(
                 (int)CompositeImage.ActualWidth, (int)CompositeImage.ActualHeight, 96.0, 96.0, PixelFormats.Pbgra32);
-
             DrawingVisual dv = new DrawingVisual();
             using (DrawingContext dc = dv.RenderOpen())
             {
                 VisualBrush brush = new VisualBrush(CompositeImage);
                 dc.DrawRectangle(brush, null, new System.Windows.Rect(new Point(), new Size(CompositeImage.ActualWidth, CompositeImage.ActualHeight)));
             }
-
             renderBitmap.Render(dv);
-
+            
             BitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
-
             string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
-
             string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-
             string path = Path.Combine(myPhotos, "KinectScreenshot-" + time + ".png");
 
             // Write the new file to disk
@@ -302,7 +312,6 @@ namespace K4ACalibration
                 {
                     encoder.Save(fs);
                 }
-
                 this.StatusText = string.Format(Properties.Resources.SavedScreenshotStatusTextFormat, path);
             }
             catch (IOException)
@@ -326,12 +335,28 @@ namespace K4ACalibration
             //Capture capDepthAverage = new Capture();
             //capDepthAverage.Depth = new Image(tempRef.Depth.Format, tempRef.Depth.WidthPixels, tempRef.Depth.HeightPixels, tempRef.Depth.StrideBytes);
             ////capDepthAverage.Depth.SetPixel
-
             this._lstDepthCaptures.Clear();
-            
-            this._bSaveAverageFlag = true;
+            //this._bSaveAverageFlag = true;
+            MessageBox.Show("sdfsdsdfsdfsdf: " + strInfo + " flag:" + _bSaveAverageFlag);
+            Thread td = new Thread(new ThreadStart(doWork));
+            //autoReset.Reset();
+            td.Start();
+            return;
+        }
 
-            MessageBox.Show("sdfsdsdfsdfsdf: " + strInfo);
+        AutoResetEvent autoReset = new AutoResetEvent(false);
+
+        private void doWork()
+        {
+            Console.WriteLine(Thread.CurrentThread.Name + " is started!");
+            this._bSaveAverageFlag = true;
+            MessageBox.Show("sta, count: " + this._lstDepthCaptures.Count + ", " + this._bSaveAverageFlag);
+            autoReset.WaitOne();
+            MessageBox.Show("end, count: " + this._lstDepthCaptures.Count + ", " + this._bSaveAverageFlag);
+            //MessageBox.Show("end");
+            Console.WriteLine(Thread.CurrentThread.Name + " is ended!");
+            return;
+
         }
 
         /// <summary>
