@@ -388,6 +388,8 @@ namespace K4ACalibration
                         int index = 0;
                         float[,] depthVals = new float[depthHeight, depthWidth];
                         float[,,] depthAll = new float[this._lstDepthCaptures.Count, depthHeight, depthWidth];
+                        List<float[,]> lstDepthAll = new List<float[,]>();
+
                         for (int i = 0; i < depthHeight; i++) {
                             for (int j = 0; j < depthWidth; j++) {
                                 sTotal = sCount = 0;
@@ -405,13 +407,22 @@ namespace K4ACalibration
                             } // end of for
                         } // end of for
 
-
                         saveDepthDataToFile(depthVals);
                         Thread.Sleep(1000);
+
+                        ////for (int i = 0; i < this._lstDepthCaptures.Count; i++) {
                         for (int i = 0; i < this._lstDepthCaptures.Count; i++) {
-                            //saveDepthDataToFile(depthAll[i]);
+                            float[,] temp = new float[depthHeight, depthWidth];
+
+                            for (int j = 0; j < depthHeight; j++) {
+                                for (int k = 0; k < depthWidth; k++) {
+                                    temp[j, k] = depthAll[i, j, k];
+                                }
+                            }
+                            Thread.Sleep(1000);
+                            saveDepthDataToFile(temp);
                         }
-                    }
+                    } // end of if
 
                     break;
                 case OutputType.IR:
@@ -424,14 +435,6 @@ namespace K4ACalibration
                     saveImageToFile(this._lstRgbCaptures.ElementAt(0).Color);
                     break;
             }
-
-
-
-
-
-
-
-
 
             MessageBox.Show("end, count: " + this._lstDepthCaptures.Count + ", " + this._bSaveAverageFlag);
             //MessageBox.Show("end");
