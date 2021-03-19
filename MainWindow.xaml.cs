@@ -22,6 +22,7 @@ namespace K4ACalibration
     using System.Collections.ObjectModel;
     using System.Linq;
     using System.Threading;
+    using System.Text;
 
     /// <summary>
     /// Interaction logic for MainWindow
@@ -54,18 +55,6 @@ namespace K4ACalibration
         /// <summary> Status of the application </summary>
         private bool running = true;
 
-        private SynchronizationContext _uiContext;
-
-        private OutputOption _selectedOutput;
-        public ObservableCollection<OutputOption> Outputs { get; set; }
-
-        private ImageSource _bitmap;
-
-        /// <summary> INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public ImageSource CurrentCameraImage => _bitmap;
-
         private int xPosImage = 0;
 
         private int yPosImage = 0;
@@ -73,6 +62,35 @@ namespace K4ACalibration
         private long _nCaptureCounter = 0;
 
         private volatile bool _bSaveAverageFlag = false;
+
+        private static readonly int CAPTURE_CAPACITY = 10;
+
+        private readonly List<Capture> _lstDepthCaptures = new List<Capture>();
+
+        private readonly List<Capture> _lstIrCaptures = new List<Capture>();
+
+        private readonly List<Capture> _lstRgbCaptures = new List<Capture>();
+
+        private OutputOption _selectedOutput;
+
+        private SynchronizationContext _uiContext;
+
+        private ImageSource _bitmap;
+
+        private readonly StringBuilder _sbdCaptureColorInfo = new StringBuilder();
+
+        private readonly StringBuilder _sbdCaptureInfraRedInfo = new StringBuilder();
+
+        private readonly StringBuilder _sbdCaptureDepthInfo = new StringBuilder();
+
+        private readonly StringBuilder _sbdPositionInfo = new StringBuilder();
+
+        public ObservableCollection<OutputOption> Outputs { get; set; }
+
+        /// <summary> INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public ImageSource CurrentCameraImage => _bitmap;
 
         /// <summary> Initializes a new instance of the MainWindow class. </summary>
         public MainWindow()
@@ -94,10 +112,11 @@ namespace K4ACalibration
             this.kinect.StartCameras(new DeviceConfiguration
             {
                 ColorFormat = ImageFormat.ColorBGRA32,
-                ColorResolution = ColorResolution.R1080p,
+                ColorResolution = ColorResolution.R2160p,
                 DepthMode = DepthMode.NFOV_2x2Binned,
-                SynchronizedImagesOnly = true
+                SynchronizedImagesOnly = false
             });
+
 
             this.colorWidth = this.kinect.GetCalibration().ColorCameraCalibration.ResolutionWidth;
             this.colorHeight = this.kinect.GetCalibration().ColorCameraCalibration.ResolutionHeight;
@@ -114,19 +133,21 @@ namespace K4ACalibration
             //this.KinectImage.MouseLeave += this.mouseLeaveFromStream;
             this.InitializeComponent();
             this._uiContext = SynchronizationContext.Current;
+
+            this._sbdCaptureColorInfo.Append(String.Format("{0} :: {1} X {2} :: ",
+                ImageFormat.ColorBGRA32, this.colorWidth, this.colorHeight));
+
+            this._sbdCaptureDepthInfo.Append(String.Format("{0} :: {1} X {2} :: ",
+                ImageFormat.Depth16, this.depthWidth, this.depthHeight));
+
+            this._sbdCaptureInfraRedInfo.Append(String.Format("{0} :: {1} X {2} :: ",
+                ImageFormat.IR16, this.infraRedWidth, this.infraRedHeight));
             return;
         }
 
-        private static readonly int CAPTURE_CAPACITY = 10;
-
-        private readonly List<Capture> _lstDepthCaptures = new List<Capture>();
-
-        private readonly List<Capture> _lstIrCaptures = new List<Capture>();
-
-        private readonly List<Capture> _lstRgbCaptures = new List<Capture>();
-
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            //lblInfo.Content = this._sbdCaptureInfo.ToString();
             while (running)
             {
                 using (Capture capture = await Task.Run(() => { return this.kinect.GetCapture(); }))
@@ -135,11 +156,13 @@ namespace K4ACalibration
                     switch (SelectedOutput.OutputType)
                     {
                         case OutputType.Depth:
-                            lblInfo.Content = "DEPTH " + capture.Depth.WidthPixels + " X "
-                                    + capture.Depth.HeightPixels
-                                    + ", DEPTH DIM " + depthWidth + " =X= " + depthHeight
-                                    + ", Format: " + capture.Depth.Format
-                                    + ", Count: " + this._nCaptureCounter + ", flag? " + _bSaveAverageFlag;
+                            if (null == capture.Depth) {
+                                continue;
+                            }
+
+                            //lblInfo.Content = capture.Depth.Format + " " + capture.Depth.WidthPixels + " X "
+                            //        + capture.Depth.HeightPixels
+                            //        + ", Count: " + this._nCaptureCounter;
 
                             //Memory<byte> sa = capture.Depth.Memory;
                             //lblDene.Content = sa.Length;
@@ -161,9 +184,6 @@ namespace K4ACalibration
                                 Image dd = GeneralUtil.updateImage(capture.Depth);
                                 _bitmap = dd.CreateBitmapSource();
 
-                                //Image dd = updateImage(capture.Depth);
-                                //_bitmap = dd.CreateBitmapSource();
-
                                 _bitmap.Freeze();
                             }, null);
 
@@ -173,19 +193,27 @@ namespace K4ACalibration
                                 {
                                     short sPixelValue = capture.Depth.GetPixel<short>(yPosImage, xPosImage);
                                     this.lblPos.Content = String.Format("x:{0, -3}, y:{1, -3}, val: {2, -5} ", xPosImage, yPosImage, sPixelValue);
-                                }
-                            }
 
+                                    this._sbdPositionInfo.Clear();
+                                    this._sbdPositionInfo.Append(String.Format(
+                                        " :: x: {0, -3}, y: {1, -3}, value: {2, -5} ", xPosImage, yPosImage, sPixelValue));
+                                }
+                            } 
+                            
+                            int nLastIndex = this._sbdCaptureDepthInfo.ToString().LastIndexOf(":");
+                            nLastIndex = (nLastIndex < 0 && nLastIndex >= this._sbdCaptureDepthInfo.Length -1 ? 0 : nLastIndex + 2);
+                            this._sbdCaptureDepthInfo.Remove(nLastIndex, this._sbdCaptureDepthInfo.Length - nLastIndex);
+                            this._sbdCaptureDepthInfo.Append(this._nCaptureCounter);
+
+                            lblInfo.Content = this._sbdCaptureDepthInfo.ToString() + this._sbdPositionInfo.ToString();
+                            
                             break;
                         case OutputType.IR:
-                            lblInfo.Content = "IR " + capture.IR.WidthPixels + " X "
-                                    + capture.IR.HeightPixels + ", Format: " + capture.IR.Format + ", Count: " + this._nCaptureCounter;
-
-                            //if (_lstIrCaptures.Count == CAPTURE_CAPACITY)
-                            //{
-                            //    _lstIrCaptures.RemoveAt(0);
-                            //}
-                            //_lstIrCaptures.Add(capture.Reference());
+                            if (null == capture.IR) {
+                                continue;
+                            }
+                            //lblInfo.Content = "IR " + capture.IR.WidthPixels + " X "
+                            //        + capture.IR.HeightPixels + ", Format: " + capture.IR.Format + ", Count: " + this._nCaptureCounter;
 
                             if (this._bSaveAverageFlag)
                             {
@@ -211,14 +239,28 @@ namespace K4ACalibration
                                 {
                                     short sPixelValue = capture.IR.GetPixel<short>(yPosImage, xPosImage);
                                     this.lblPos.Content = String.Format("x:{0, -3}, y:{1, -3}, val: {2, -5} ", xPosImage, yPosImage, sPixelValue);
+
+                                    this._sbdPositionInfo.Clear();
+                                    this._sbdPositionInfo.Append(String.Format(" :: x: {0, -3}, y: {1, -3}, value: {2, -5} ", xPosImage, yPosImage, sPixelValue));
                                 } // end of if
                             }
+
+                            nLastIndex = this._sbdCaptureInfraRedInfo.ToString().LastIndexOf(":");
+                            nLastIndex = (nLastIndex < 0 && nLastIndex >= this._sbdCaptureInfraRedInfo.Length -1 ? 0 : nLastIndex + 2);
+                            this._sbdCaptureInfraRedInfo.Remove(nLastIndex, this._sbdCaptureInfraRedInfo.Length - nLastIndex);
+                            this._sbdCaptureInfraRedInfo.Append(this._nCaptureCounter);
+
+                            lblInfo.Content = this._sbdCaptureInfraRedInfo.ToString() + this._sbdPositionInfo.ToString();
 
                             break;
                         case OutputType.Colour:
                         default:
-                            lblInfo.Content = "Color " + capture.Color.WidthPixels + " X "
-                                    + capture.Color.HeightPixels + ", Format: " + capture.Color.Format + ", Count: " + this._nCaptureCounter;
+                            if (null == capture.Color) {
+                                continue;
+                            }
+                            
+                            //lblInfo.Content = "Color " + capture.Color.WidthPixels + " X "
+                            //        + capture.Color.HeightPixels + ", Format: " + capture.Color.Format + ", Count: " + this._nCaptureCounter;
                             
                             if (this._bSaveAverageFlag)
                             {
@@ -246,6 +288,10 @@ namespace K4ACalibration
                                     int nBlueValue = nPixelValue & 0x000000FF;
                                     this.lblPos.Content = String.Format("x:{0, -4}, y:{1, -4}," +
                                         "  red: {2,-3}, g: {3,-3}, b: {4,-3}  ", xPosImage, yPosImage, nRedValue, nGreenValue, nBlueValue);
+
+                                    this._sbdPositionInfo.Clear();
+                                    this._sbdPositionInfo.Append(String.Format(" :: x: {0, -4}, y: {1, -4}," +
+                                        "  red: {2,-3}, green: {3,-3}, blue: {4,-3}  ", xPosImage, yPosImage, nRedValue, nGreenValue, nBlueValue));
                                 } // end of if
                             }
 
@@ -259,6 +305,16 @@ namespace K4ACalibration
                             //    } }
                             //this.bitmap.AddDirtyRect(region);
                             //this.bitmap.Unlock();
+
+                            nLastIndex = this._sbdCaptureColorInfo.ToString().LastIndexOf(":");
+                            //MessageBox.Show("count: " + _nCaptureCounter + ", last: " + nLastIndex
+                             //   + ", cap before remove__" + this._sbdCaptureInfo.ToString() + "__" + this._sbdCaptureInfo.Length);
+                            nLastIndex = (nLastIndex < 0 && nLastIndex >= this._sbdCaptureColorInfo.Length -1 ? 0 : nLastIndex + 2);
+                            this._sbdCaptureColorInfo.Remove(nLastIndex, this._sbdCaptureColorInfo.Length - nLastIndex);
+                            this._sbdCaptureColorInfo.Append(this._nCaptureCounter);
+
+                            lblInfo.Content = this._sbdCaptureColorInfo.ToString() + this._sbdPositionInfo.ToString();
+
                             break;
                     }
 
@@ -285,6 +341,7 @@ namespace K4ACalibration
         void mouseLeaveFromStream(Object sender, MouseEventArgs e)
         {
             this.lblPos.Content = "";
+            this._sbdPositionInfo.Clear();
             return;
         }
 
@@ -367,6 +424,7 @@ namespace K4ACalibration
 
         private void saveAverageCapture()
         {
+            
             Console.WriteLine(Thread.CurrentThread.Name + " is started!");
             this._bSaveAverageFlag = true;
             MessageBox.Show("sta, count: " + this._lstDepthCaptures.Count + ", " + this._bSaveAverageFlag);
