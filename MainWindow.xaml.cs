@@ -85,6 +85,8 @@ namespace K4ACalibration
 
         private readonly StringBuilder _sbdPositionInfo = new StringBuilder();
 
+        private readonly AutoResetEvent autoReset = new AutoResetEvent(false);
+
         public ObservableCollection<OutputOption> Outputs { get; set; }
 
         /// <summary> INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data </summary>
@@ -320,19 +322,6 @@ namespace K4ACalibration
 
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("CurrentCameraImage"));
 
-                    //this.StatusText = "Received Capture: " + capture.Depth.DeviceTimestamp;
-                    //this.bitmap.Lock();
-                    //var color = capture.Color;
-                    //var region = new Int32Rect(0, 0, color.WidthPixels, color.HeightPixels);
-                    //unsafe
-                    //{
-                    //    using (var pin = color.Memory.Pin())
-                    //    {
-                    //        this.bitmap.WritePixels(region, (IntPtr)pin.Pointer, (int)color.Size, color.StrideBytes);
-                    //    }
-                    //}
-                    //this.bitmap.AddDirtyRect(region);
-                    //this.bitmap.Unlock();
                 }
             }
             return;
@@ -349,7 +338,6 @@ namespace K4ACalibration
         {
             //this.lblPos.Content = "x: " + (int)Mouse.GetPosition(this.KinectImage).X
             //    + " y: " + (int)Mouse.GetPosition(this.KinectImage).Y + " counter: " + counter ;
-            //this.yPosRgbIrStream = (int)Mouse.GetPosition(this.imgLeft).Y;
             this.xPosImage = (int)Mouse.GetPosition(this.KinectImage).X;
             this.yPosImage = (int)Mouse.GetPosition(this.KinectImage).Y;
             return;
@@ -380,16 +368,12 @@ namespace K4ACalibration
             string path = Path.Combine(myPhotos, "KinectScreenshot-" + time + ".png");
 
             // Write the new file to disk
-            try
-            {
-                using (FileStream fs = new FileStream(path, FileMode.Create))
-                {
+            try {
+                using (FileStream fs = new FileStream(path, FileMode.Create)) {
                     encoder.Save(fs);
                 }
                 this.StatusText = string.Format(Properties.Resources.SavedScreenshotStatusTextFormat, path);
-            }
-            catch (IOException)
-            {
+            } catch (IOException) {
                 this.StatusText = string.Format(Properties.Resources.FailedScreenshotStatusTextFormat, path);
             }
             return;
@@ -398,17 +382,6 @@ namespace K4ACalibration
         private void SaveAverage_Click(object sender, RoutedEventArgs e)
         {
             String strInfo = " " + this._lstDepthCaptures.Count;
-            //int count = this._lstDepthCaptures.Count;
-            //foreach (Capture aPart in this._lstDepthCaptures)
-            //{
-            //    long lTimes = aPart.Depth.SystemTimestampNsec;
-            //    strInfo += lTimes + " _ ";
-            //}
-
-            //Capture tempRef = this._lstDepthCaptures.ElementAt(0);
-            //Capture capDepthAverage = new Capture();
-            //capDepthAverage.Depth = new Image(tempRef.Depth.Format, tempRef.Depth.WidthPixels, tempRef.Depth.HeightPixels, tempRef.Depth.StrideBytes);
-            ////capDepthAverage.Depth.SetPixel
             this._lstDepthCaptures.Clear();
             this._lstIrCaptures.Clear();
             this._lstRgbCaptures.Clear();
@@ -420,14 +393,12 @@ namespace K4ACalibration
             return;
         }
 
-        private readonly AutoResetEvent autoReset = new AutoResetEvent(false);
-
         private void saveAverageCapture()
         {
             
             Console.WriteLine(Thread.CurrentThread.Name + " is started!");
             this._bSaveAverageFlag = true;
-            MessageBox.Show("sta, count: " + this._lstDepthCaptures.Count + ", " + this._bSaveAverageFlag);
+            //MessageBox.Show("sta, count: " + this._lstDepthCaptures.Count + ", " + this._bSaveAverageFlag);
             autoReset.WaitOne();
 
             switch (SelectedOutput.OutputType)
@@ -474,8 +445,8 @@ namespace K4ACalibration
                         } // end of for
 
                         //saveImageToFile(cptDepthAverage.Depth);
-                        Image dd = GeneralUtil.updateImage(cptDepthAverage.Depth);
-                        saveImageToFile(dd);
+                        Image imgUpdated = GeneralUtil.updateImage(cptDepthAverage.Depth);
+                        saveImageToFile(imgUpdated);
 
                         saveDepthDataToFile(depthVals);
                         Thread.Sleep(1000);
@@ -575,8 +546,10 @@ namespace K4ACalibration
                     break;
             }
 
-            MessageBox.Show("end, count: " + this._lstDepthCaptures.Count + ", " + this._bSaveAverageFlag);
-            //MessageBox.Show("end");
+            if (CAPTURE_CAPACITY >= 1) {
+                MessageBox.Show(String.Format("Average values found for {0} captures.", CAPTURE_CAPACITY));
+            }
+            
             Console.WriteLine(Thread.CurrentThread.Name + " is ended!");
             return;
         }
@@ -585,12 +558,11 @@ namespace K4ACalibration
 
             String strType = SelectedOutput.OutputType.ToString();
             BitmapEncoder encoder = new PngBitmapEncoder();
-            //encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
             encoder.Frames.Add(BitmapFrame.Create(acptSave.CreateBitmapSource()));
 
             string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
             string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-            string path = Path.Combine(myPhotos, "KinectScreenshot_" + strType + "-" + time + ".png");
+            string path = Path.Combine(myPhotos, "KinectScreenshotAvg_" + strType + "-" + time + ".png");
 
             // Write the new file to disk
             try {
@@ -607,7 +579,7 @@ namespace K4ACalibration
         private void saveDepthDataToFile(float[,] aseqPoints) {
             string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
             string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-            string pathDepth = System.IO.Path.Combine(myPhotos, "Depth" + time + ".txt");
+            string pathDepth = System.IO.Path.Combine(myPhotos, "DepthAvg" + time + ".txt");
 
             // write the new file to disk
             try {
@@ -621,11 +593,11 @@ namespace K4ACalibration
                     }
                 }
 
-                this.StatusText = string.Format(CultureInfo.InvariantCulture, "{0} Saved depth data to {1}",
-                    Properties.Resources.SavedScreenshotStatusTextFormat, pathDepth);
+                this.StatusText = string.Format(CultureInfo.InvariantCulture, "Saved depth data to {0}", pathDepth);
 
             } catch (IOException) {
-                this.StatusText = string.Format(CultureInfo.InvariantCulture, "{0}", Properties.Resources.FailedScreenshotStatusTextFormat);
+                this.StatusText = string.Format(CultureInfo.InvariantCulture,
+                    "{0}", Properties.Resources.FailedScreenshotStatusTextFormat);
             }
             return;
         }
