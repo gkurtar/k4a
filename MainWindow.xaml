@@ -74,9 +74,9 @@
                 <Label x:Name="lblInfo" HorizontalAlignment="Left"
                VerticalAlignment="Top" Width="475" Height="40" Background="AliceBlue"/>
 
-            <Label x:Name="lblPos" HorizontalAlignment="Left"
+            <!--<Label x:Name="lblPos" HorizontalAlignment="Left"
                VerticalAlignment="Top" Width="215" Height="40" Background="BlanchedAlmond"/>
-            <!--<Label x:Name="lblDene3" Width="275" Height="40" Background="Bisque"/> -->
+            <Label x:Name="lblDene3" Width="275" Height="40" Background="Bisque"/> -->
 
         </WrapPanel>
 
