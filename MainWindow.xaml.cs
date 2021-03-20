@@ -634,15 +634,15 @@ namespace K4ACalibration
             }
         }
 
-        /// <summary> Gets the bitmap to display </summary>
-        public ImageSource ImageSource
-        {
-            get
-            {
-                return this._bitmap;
-            }
-            set { this._bitmap = value; }
-        }
+        ///// <summary> Gets the bitmap to display </summary>
+        //public ImageSource ImageSource
+        //{
+        //    get
+        //    {
+        //        return this._bitmap;
+        //    }
+        //    set { this._bitmap = value; }
+        //}
 
         /// <summary> Gets or sets the current status text to display </summary>
         public string StatusText
