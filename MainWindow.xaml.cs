@@ -7,6 +7,7 @@
 namespace K4ACalibration
 {
     using System;
+    using System.Configuration;
     using System.ComponentModel;
     using System.Diagnostics;
     using System.Globalization;
@@ -63,7 +64,7 @@ namespace K4ACalibration
 
         private volatile bool _bSaveAverageFlag = false;
 
-        private static readonly int CAPTURE_CAPACITY = 10;
+        private static int CAPTURE_CAPACITY; //Default value is 10 in the config file
 
         private readonly List<Capture> _lstDepthCaptures = new List<Capture>();
 
@@ -105,7 +106,13 @@ namespace K4ACalibration
             };
 
             SelectedOutput = Outputs.First();
-            //this.KinectImage.MouseMove += KinectImage_MouseMove;
+
+            String strCapturesToAverage = ConfigurationManager.AppSettings["NUMBER_OF_CAPTURES_TO_AVERAGE"];
+
+            int.TryParse(strCapturesToAverage, out CAPTURE_CAPACITY);
+            if (CAPTURE_CAPACITY == 0) {
+                CAPTURE_CAPACITY = 10;
+            }
 
             // Open the default device
             this.kinect = Device.Open();
@@ -129,13 +136,6 @@ namespace K4ACalibration
             this.infraRedWidth = this.kinect.GetCalibration().DepthCameraCalibration.ResolutionWidth;
             this.infraRedHeight = this.kinect.GetCalibration().DepthCameraCalibration.ResolutionHeight;
 
-            this.bitmap = new WriteableBitmap(colorWidth, colorHeight, 96.0, 96.0, PixelFormats.Bgra32, null);
-            this.DataContext = this;
-            //this.KinectImage.MouseMove += this.mouseMoveOverStream;
-            //this.KinectImage.MouseLeave += this.mouseLeaveFromStream;
-            this.InitializeComponent();
-            this._uiContext = SynchronizationContext.Current;
-
             this._sbdCaptureColorInfo.Append(String.Format("{0} :: {1} X {2} :: ",
                 ImageFormat.ColorBGRA32, this.colorWidth, this.colorHeight));
 
@@ -144,6 +144,15 @@ namespace K4ACalibration
 
             this._sbdCaptureInfraRedInfo.Append(String.Format("{0} :: {1} X {2} :: ",
                 ImageFormat.IR16, this.infraRedWidth, this.infraRedHeight));
+
+            this.bitmap = new WriteableBitmap(colorWidth, colorHeight, 96.0, 96.0, PixelFormats.Bgra32, null);
+            this.DataContext = this;
+            //this.KinectImage.MouseMove += this.mouseMoveOverStream;
+            //this.KinectImage.MouseLeave += this.mouseLeaveFromStream;
+
+            this.InitializeComponent();
+            this._uiContext = SynchronizationContext.Current;
+
             return;
         }
 
@@ -562,8 +571,8 @@ namespace K4ACalibration
 
             string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
             string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-            string path = Path.Combine(myPhotos, "KinectScreenshotAvg_" + strType + "-" + time + ".png");
-
+            string path = Path.Combine(myPhotos, "KinectScreenshotAvg_" + CAPTURE_CAPACITY + "_" + strType + "-" + time + ".png");
+            
             // Write the new file to disk
             try {
                 using (FileStream fs = new FileStream(path, FileMode.Create)) {
@@ -579,7 +588,7 @@ namespace K4ACalibration
         private void saveDepthDataToFile(float[,] aseqPoints) {
             string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
             string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-            string pathDepth = System.IO.Path.Combine(myPhotos, "DepthAvg" + time + ".txt");
+            string pathDepth = System.IO.Path.Combine(myPhotos, "DepthAvg_" + CAPTURE_CAPACITY + "-" + time + ".txt");
 
             // write the new file to disk
             try {
