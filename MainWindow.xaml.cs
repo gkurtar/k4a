@@ -454,7 +454,9 @@ namespace K4ACalibration
                         Image imgUpdated = GeneralUtil.updateImage(cptDepthAverage.Depth);
                         saveImageToFile(imgUpdated);
 
-                        saveDepthDataToFile(depthVals);
+                        //saveDepthDataToFile(depthVals);
+
+                        SaveDataHelper.saveDepthDataToFile(this, depthVals);
                         Thread.Sleep(1000);
 
                         ////dogrulama icin
@@ -582,31 +584,31 @@ namespace K4ACalibration
             return;
         }
 
-        private void saveDepthDataToFile(float[,] aseqPoints) {
-            string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
-            string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-            string pathDepth = System.IO.Path.Combine(myPhotos, "DepthAvg_" + CAPTURE_CAPACITY + "-" + time + ".txt");
+        //private void saveDepthDataToFile(float[,] aseqPoints) {
+        //    string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
+        //    string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+        //    string pathDepth = System.IO.Path.Combine(myPhotos, "DepthAvg_" + CAPTURE_CAPACITY + "-" + time + ".txt");
 
-            // write the new file to disk
-            try {
-                using (StreamWriter sw = new StreamWriter(pathDepth)) {
-                    // loop over each row and column of the depth
-                    for (int x = 0; x < depthHeight; ++x) {
-                        for (int y = 0; y < depthWidth; ++y) {
-                            // calculate index into depth array
-                            sw.WriteLine(x + " " + y + " " + aseqPoints[x, y]);
-                        }
-                    }
-                }
+        //    // write the new file to disk
+        //    try {
+        //        using (StreamWriter sw = new StreamWriter(pathDepth)) {
+        //            // loop over each row and column of the depth
+        //            for (int x = 0; x < depthHeight; ++x) {
+        //                for (int y = 0; y < depthWidth; ++y) {
+        //                    // calculate index into depth array
+        //                    sw.WriteLine(x + " " + y + " " + aseqPoints[x, y]);
+        //                }
+        //            }
+        //        }
 
-                this.StatusText = string.Format(CultureInfo.InvariantCulture, "Saved depth data to {0}", pathDepth);
+        //        this.StatusText = string.Format(CultureInfo.InvariantCulture, "Saved depth data to {0}", pathDepth);
 
-            } catch (IOException) {
-                this.StatusText = string.Format(CultureInfo.InvariantCulture,
-                    "{0}", Properties.Resources.FailedScreenshotStatusTextFormat);
-            }
-            return;
-        }
+        //    } catch (IOException) {
+        //        this.StatusText = string.Format(CultureInfo.InvariantCulture,
+        //            "{0}", Properties.Resources.FailedScreenshotStatusTextFormat);
+        //    }
+        //    return;
+        //}
 
         /// <summary>
         /// Execute shutdown tasks
@@ -665,7 +667,13 @@ namespace K4ACalibration
                 }
             }
         }
-    }
+
+		public int DepthHeight => depthHeight;
+
+        public int DepthWidth => depthWidth;
+
+		public static int KINECT_CAPTURE_CAPACITY { get => CAPTURE_CAPACITY; set => CAPTURE_CAPACITY = value; }
+	}
 
     public enum OutputType
     {

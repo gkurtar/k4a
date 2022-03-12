@@ -101,6 +101,7 @@
     <Compile Include="AllCaptures.xaml.cs">
       <DependentUpon>AllCaptures.xaml</DependentUpon>
     </Compile>
+    <Compile Include="SaveDataHelper.cs" />
     <Compile Include="GeneralUtil.cs" />
     <Compile Include="Window1.xaml.cs">
       <DependentUpon>Window1.xaml</DependentUpon>
