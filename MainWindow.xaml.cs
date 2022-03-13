@@ -40,18 +40,18 @@ namespace K4ACalibration
         private string statusText = null;
 
         /// <summary> The width in pixels of the color image from the Azure Kinect DK </summary>
-        private readonly int colorWidth = 0;
+        internal readonly int colorWidth = 0;
 
         /// <summary> The height in pixels of the color image from the Azure Kinect DK </summary>
-        private readonly int colorHeight = 0;
+        internal readonly int colorHeight = 0;
 
-        private readonly int depthWidth = 0;
+        internal readonly int depthWidth = 0;
 
-        private readonly int depthHeight = 0;
+        internal readonly int depthHeight = 0;
 
-        private readonly int infraRedWidth = 0;
+        internal readonly int infraRedWidth = 0;
 
-        private readonly int infraRedHeight = 0;
+        internal readonly int infraRedHeight = 0;
 
         /// <summary> Status of the application </summary>
         private bool running = true;
@@ -64,7 +64,7 @@ namespace K4ACalibration
 
         private volatile bool _bSaveAverageFlag = false;
 
-        private static int CAPTURE_CAPACITY; //Default value is 10 in the config file
+        internal static int CAPTURE_CAPACITY; //Default value is 10 in the config file
 
         private readonly List<Capture> _lstDepthCaptures = new List<Capture>();
 
@@ -86,7 +86,7 @@ namespace K4ACalibration
 
         private readonly StringBuilder _sbdPositionInfo = new StringBuilder();
 
-        private readonly AutoResetEvent autoReset = new AutoResetEvent(false);
+        internal readonly AutoResetEvent autoReset = new AutoResetEvent(false);
 
         public ObservableCollection<OutputOption> Outputs { get; set; }
 
@@ -94,6 +94,8 @@ namespace K4ACalibration
         public event PropertyChangedEventHandler PropertyChanged;
 
         public ImageSource CurrentCameraImage => _bitmap;
+
+        SaveDataHelper objSaveDataHelper;
 
         /// <summary> Initializes a new instance of the MainWindow class. </summary>
         public MainWindow()
@@ -153,6 +155,7 @@ namespace K4ACalibration
             this.InitializeComponent();
             this._uiContext = SynchronizationContext.Current;
 
+            objSaveDataHelper = new SaveDataHelper(this);
             return;
         }
 
@@ -393,196 +396,200 @@ namespace K4ACalibration
             this._lstDepthCaptures.Clear();
             this._lstIrCaptures.Clear();
             this._lstRgbCaptures.Clear();
-            //this._bSaveAverageFlag = true;
-            //MessageBox.Show("sdfsdsdfsdfsdf: " + strInfo + " flag:" + _bSaveAverageFlag);
-            Thread thdSaveAvg = new Thread(new ThreadStart(saveAverageCapture));
+
+            //Thread thdSaveAvg = new Thread(new ThreadStart(saveAverageCapture));
+            //Thread thdSaveAvg = new Thread(new ParameterizedThreadStart(SaveDataHelper.saveAverageCapture));
+            
+            Thread thdSaveAvg = new Thread(new ThreadStart(objSaveDataHelper.saveAverageCapture));
             //autoReset.Reset();
             thdSaveAvg.Start();
             return;
         }
 
-        private void saveAverageCapture() {
-            //Console.WriteLine(Thread.CurrentThread.Name + " is started!");
-            this._bSaveAverageFlag = true;
-            //MessageBox.Show("sta, count: " + this._lstDepthCaptures.Count + ", " + this._bSaveAverageFlag);
-            autoReset.WaitOne();
+        //private void saveAverageCapture() {
+        //    //Console.WriteLine(Thread.CurrentThread.Name + " is started!");
+        //    this._bSaveAverageFlag = true;
+        //    //MessageBox.Show("sta, count: " + this._lstDepthCaptures.Count + ", " + this._bSaveAverageFlag);
+        //    autoReset.WaitOne();
 
-            switch (SelectedOutput.OutputType)
-            {
-                case OutputType.Depth:
+        //    switch (SelectedOutput.OutputType)
+        //    {
+        //        case OutputType.Depth:
 
-                    if (this._lstDepthCaptures.Count >= CAPTURE_CAPACITY) {
-                        Capture cptSample = this._lstDepthCaptures.ElementAt(0);
-                        Capture cptDepthAverage = new Capture();
-                        cptDepthAverage.Depth = new Image(cptSample.Depth.Format, cptSample.Depth.WidthPixels,
-                            cptSample.Depth.HeightPixels, cptSample.Depth.StrideBytes);
-                        cptDepthAverage.Depth.WhiteBalance = cptSample.Depth.WhiteBalance;
-                        cptDepthAverage.Depth.DeviceTimestamp = cptSample.Depth.DeviceTimestamp;
-                        cptDepthAverage.Depth.SystemTimestampNsec = cptSample.Depth.SystemTimestampNsec;
+        //            if (this._lstDepthCaptures.Count >= CAPTURE_CAPACITY) {
+        //                Capture cptSample = this._lstDepthCaptures.ElementAt(0);
+        //                Capture cptDepthAverage = new Capture();
+        //                cptDepthAverage.Depth = new Image(cptSample.Depth.Format, cptSample.Depth.WidthPixels,
+        //                    cptSample.Depth.HeightPixels, cptSample.Depth.StrideBytes);
+        //                cptDepthAverage.Depth.WhiteBalance = cptSample.Depth.WhiteBalance;
+        //                cptDepthAverage.Depth.DeviceTimestamp = cptSample.Depth.DeviceTimestamp;
+        //                cptDepthAverage.Depth.SystemTimestampNsec = cptSample.Depth.SystemTimestampNsec;
 
-                        //foreach (Capture cptDepth in this._lstDepthCaptures) {
-                        //    //long lTimes = aPart.Depth.SystemTimestampNsec;
-                        //    //strInfo += lTimes + " _ ";
-                        //}
-                        short sValue = 0;
-                        short sTotal = 0;
-                        short sCount = 0;
-                        int index = 0;
-                        float[,] depthVals = new float[depthHeight, depthWidth];
-                        float[,,] depthAll = new float[this._lstDepthCaptures.Count, depthHeight, depthWidth];
-                        List<float[,]> lstDepthAll = new List<float[,]>();
+        //                //foreach (Capture cptDepth in this._lstDepthCaptures) {
+        //                //    //long lTimes = aPart.Depth.SystemTimestampNsec;
+        //                //    //strInfo += lTimes + " _ ";
+        //                //}
+        //                short sValue = 0;
+        //                short sTotal = 0;
+        //                short sCount = 0;
+        //                int index = 0;
+        //                float[,] depthVals = new float[depthHeight, depthWidth];
+        //                float[,,] depthAll = new float[this._lstDepthCaptures.Count, depthHeight, depthWidth];
+        //                List<float[,]> lstDepthAll = new List<float[,]>();
 
-                        for (int i = 0; i < depthHeight; i++) {
-                            for (int j = 0; j < depthWidth; j++) {
-                                sTotal = sCount = 0;
-                                index = 0;
-                                foreach (Capture cptDepth in this._lstDepthCaptures) {
-                                    sValue = cptDepth.Depth.GetPixel<short>(i, j);
-                                    if (sValue > 0) {
-                                        sTotal += sValue;
-                                        sCount++;
-                                    }
-                                    depthAll[index, i, j] = sValue;
-                                    index++;
-                                }
-                                depthVals[i, j] = sCount == 0 ? 0 : sTotal / (float)sCount;
-                                cptDepthAverage.Depth.SetPixel<short>(i, j, (short) depthVals[i, j]);
-                            } // end of for
-                        } // end of for
+        //                for (int i = 0; i < depthHeight; i++) {
+        //                    for (int j = 0; j < depthWidth; j++) {
+        //                        sTotal = sCount = 0;
+        //                        index = 0;
+        //                        foreach (Capture cptDepth in this._lstDepthCaptures) {
+        //                            sValue = cptDepth.Depth.GetPixel<short>(i, j);
+        //                            if (sValue > 0) {
+        //                                sTotal += sValue;
+        //                                sCount++;
+        //                            }
+        //                            depthAll[index, i, j] = sValue;
+        //                            index++;
+        //                        }
+        //                        depthVals[i, j] = sCount == 0 ? 0 : sTotal / (float)sCount;
+        //                        cptDepthAverage.Depth.SetPixel<short>(i, j, (short) depthVals[i, j]);
+        //                    } // end of for
+        //                } // end of for
 
-                        //saveImageToFile(cptDepthAverage.Depth);
-                        Image imgUpdated = GeneralUtil.updateImage(cptDepthAverage.Depth);
-                        saveImageToFile(imgUpdated);
+        //                //saveImageToFile(cptDepthAverage.Depth);
+        //                Image imgUpdated = GeneralUtil.updateImage(cptDepthAverage.Depth);
+        //                //saveImageToFile(imgUpdated);
+        //                SaveDataHelper.saveImageToFile(this, imgUpdated);
 
-                        //saveDepthDataToFile(depthVals);
+        //                //saveDepthDataToFile(depthVals);
 
-                        SaveDataHelper.saveDepthDataToFile(this, depthVals);
-                        Thread.Sleep(1000);
+        //                SaveDataHelper.saveDepthDataToFile(this, depthVals);
+        //                Thread.Sleep(1000);
 
-                        ////dogrulama icin
-                        //for (int i = 0; i < this._lstDepthCaptures.Count; i++) {
-                        //    float[,] temp = new float[depthHeight, depthWidth];
+        //                ////dogrulama icin
+        //                //for (int i = 0; i < this._lstDepthCaptures.Count; i++) {
+        //                //    float[,] temp = new float[depthHeight, depthWidth];
 
-                        //    for (int j = 0; j < depthHeight; j++) {
-                        //        for (int k = 0; k < depthWidth; k++) {
-                        //            temp[j, k] = depthAll[i, j, k];
-                        //        }
-                        //    }
-                        //    Thread.Sleep(1000);
-                        //    saveDepthDataToFile(temp);
-                        //}
-                    } // end of if
+        //                //    for (int j = 0; j < depthHeight; j++) {
+        //                //        for (int k = 0; k < depthWidth; k++) {
+        //                //            temp[j, k] = depthAll[i, j, k];
+        //                //        }
+        //                //    }
+        //                //    Thread.Sleep(1000);
+        //                //    saveDepthDataToFile(temp);
+        //                //}
+        //            } // end of if
 
-                    break;
-                case OutputType.IR:
+        //            break;
+        //        case OutputType.IR:
 
-                    if (this._lstIrCaptures.Count >= CAPTURE_CAPACITY) {
-                        Capture cptSample = this._lstIrCaptures.ElementAt(0);
-                        Capture cptIrAverage = new Capture();
-                        cptIrAverage.IR = new Image(cptSample.IR.Format, cptSample.IR.WidthPixels,
-                            cptSample.IR.HeightPixels, cptSample.IR.StrideBytes);
-                        cptIrAverage.IR.WhiteBalance = cptSample.IR.WhiteBalance;
-                        cptIrAverage.IR.DeviceTimestamp = cptSample.IR.DeviceTimestamp;
-                        cptIrAverage.IR.SystemTimestampNsec = cptSample.IR.SystemTimestampNsec;
+        //            if (this._lstIrCaptures.Count >= CAPTURE_CAPACITY) {
+        //                Capture cptSample = this._lstIrCaptures.ElementAt(0);
+        //                Capture cptIrAverage = new Capture();
+        //                cptIrAverage.IR = new Image(cptSample.IR.Format, cptSample.IR.WidthPixels,
+        //                    cptSample.IR.HeightPixels, cptSample.IR.StrideBytes);
+        //                cptIrAverage.IR.WhiteBalance = cptSample.IR.WhiteBalance;
+        //                cptIrAverage.IR.DeviceTimestamp = cptSample.IR.DeviceTimestamp;
+        //                cptIrAverage.IR.SystemTimestampNsec = cptSample.IR.SystemTimestampNsec;
 
-                        short sValue = 0;
-                        short sTotal = 0;
-                        short sCount = 0;
-                        int index = 0;
-                        float[,] irVals = new float[infraRedHeight, infraRedWidth];
+        //                short sValue = 0;
+        //                short sTotal = 0;
+        //                short sCount = 0;
+        //                int index = 0;
+        //                float[,] irVals = new float[infraRedHeight, infraRedWidth];
                         
-                        for (int i = 0; i < infraRedHeight; i++) {
-                            for (int j = 0; j < infraRedWidth; j++) {
-                                sTotal = sCount = 0;
-                                index = 0;
-                                foreach (Capture cptInfraRed in this._lstIrCaptures) {
-                                    sValue = cptInfraRed.IR.GetPixel<short>(i, j);
-                                    if (sValue > 0) {
-                                        sTotal += sValue;
-                                        sCount++;
-                                    }
-                                    index++;
-                                }
-                                irVals[i, j] = sCount == 0 ? 0 : sTotal / (float)sCount;
-                                cptIrAverage.IR.SetPixel<short>(i, j, (short) irVals[i, j]);
-                            } // end of for
-                        } // end of for
+        //                for (int i = 0; i < infraRedHeight; i++) {
+        //                    for (int j = 0; j < infraRedWidth; j++) {
+        //                        sTotal = sCount = 0;
+        //                        index = 0;
+        //                        foreach (Capture cptInfraRed in this._lstIrCaptures) {
+        //                            sValue = cptInfraRed.IR.GetPixel<short>(i, j);
+        //                            if (sValue > 0) {
+        //                                sTotal += sValue;
+        //                                sCount++;
+        //                            }
+        //                            index++;
+        //                        }
+        //                        irVals[i, j] = sCount == 0 ? 0 : sTotal / (float)sCount;
+        //                        cptIrAverage.IR.SetPixel<short>(i, j, (short) irVals[i, j]);
+        //                    } // end of for
+        //                } // end of for
 
-                        saveImageToFile(cptIrAverage.IR);
-                        Thread.Sleep(1000);
-                    } // end of if
+        //                //saveImageToFile(cptIrAverage.IR);
+        //                SaveDataHelper.saveImageToFile(this, cptIrAverage.IR);
+        //                Thread.Sleep(1000);
+        //            } // end of if
 
-                    break;
-                case OutputType.Colour:
-                default:
+        //            break;
+        //        case OutputType.Colour:
+        //        default:
 
-                    if (this._lstRgbCaptures.Count >= CAPTURE_CAPACITY) {
+        //            if (this._lstRgbCaptures.Count >= CAPTURE_CAPACITY) {
                         
-                        Capture cptSample = this._lstRgbCaptures.ElementAt(0);
-                        Capture cptRgbAverage = new Capture();
-                        cptRgbAverage.Color = new Image(cptSample.Color.Format, cptSample.Color.WidthPixels,
-                            cptSample.Color.HeightPixels, cptSample.Color.StrideBytes);
-                        cptRgbAverage.Color.WhiteBalance = cptSample.Color.WhiteBalance;
-                        cptRgbAverage.Color.DeviceTimestamp = cptSample.Color.DeviceTimestamp;
-                        cptRgbAverage.Color.SystemTimestampNsec = cptSample.Color.SystemTimestampNsec;
+        //                Capture cptSample = this._lstRgbCaptures.ElementAt(0);
+        //                Capture cptRgbAverage = new Capture();
+        //                cptRgbAverage.Color = new Image(cptSample.Color.Format, cptSample.Color.WidthPixels,
+        //                    cptSample.Color.HeightPixels, cptSample.Color.StrideBytes);
+        //                cptRgbAverage.Color.WhiteBalance = cptSample.Color.WhiteBalance;
+        //                cptRgbAverage.Color.DeviceTimestamp = cptSample.Color.DeviceTimestamp;
+        //                cptRgbAverage.Color.SystemTimestampNsec = cptSample.Color.SystemTimestampNsec;
 
-                        MessageBox.Show("sdf w-" + colorWidth + " h- " + colorHeight + " " + cptSample.Color.Format);
+        //                MessageBox.Show("sdf w-" + colorWidth + " h- " + colorHeight + " " + cptSample.Color.Format);
 
-                        int nValue = 0;
-                        int nTotal = 0;
-                        int nCount = 0;
-                        int[,] rgbVals = new int[colorHeight, colorWidth];
+        //                int nValue = 0;
+        //                int nTotal = 0;
+        //                int nCount = 0;
+        //                int[,] rgbVals = new int[colorHeight, colorWidth];
 
-                        for (int i = 0; i < colorHeight; i++) {
-                            for (int j = 0; j < colorWidth; j++) {
-                                nTotal = nCount = 0;
-                                foreach (Capture cptColor in this._lstRgbCaptures) {
-                                    //nValue = cptColor.Color.GetPixel<int>(i, j);
-                                    if (nValue > 0) {
-                                        nTotal += nValue;
-                                        nCount++;
-                                    }
-                                }
-                                rgbVals[i, j] = nCount == 0 ? 0 : nTotal / nCount;
-                                //cptRgbAverage.Color.SetPixel<int>(i, j, rgbVals[i, j]);
-                            } // end of for
-                        } // end of for
-                        MessageBox.Show("sdf 2");
-                        saveImageToFile(cptRgbAverage.Color);
-                        Thread.Sleep(1000);
-                    } // end of if
-                    break;
-            }
+        //                for (int i = 0; i < colorHeight; i++) {
+        //                    for (int j = 0; j < colorWidth; j++) {
+        //                        nTotal = nCount = 0;
+        //                        foreach (Capture cptColor in this._lstRgbCaptures) {
+        //                            //nValue = cptColor.Color.GetPixel<int>(i, j);
+        //                            if (nValue > 0) {
+        //                                nTotal += nValue;
+        //                                nCount++;
+        //                            }
+        //                        }
+        //                        rgbVals[i, j] = nCount == 0 ? 0 : nTotal / nCount;
+        //                        //cptRgbAverage.Color.SetPixel<int>(i, j, rgbVals[i, j]);
+        //                    } // end of for
+        //                } // end of for
+        //                MessageBox.Show("sdf 2");
+        //                //saveImageToFile(cptRgbAverage.Color);
+        //                SaveDataHelper.saveImageToFile(this, cptRgbAverage.Color);
+        //                Thread.Sleep(1000);
+        //            } // end of if
+        //            break;
+        //    }
 
-            if (CAPTURE_CAPACITY >= 1) {
-                MessageBox.Show(String.Format("Average values found for {0} captures.", CAPTURE_CAPACITY));
-            }
+        //    if (CAPTURE_CAPACITY >= 1) {
+        //        MessageBox.Show(String.Format("Average values found for {0} captures.", CAPTURE_CAPACITY));
+        //    }
             
-            Console.WriteLine(Thread.CurrentThread.Name + " is ended!");
-            return;
-        }
+        //    Console.WriteLine(Thread.CurrentThread.Name + " is ended!");
+        //    return;
+        //}
 
-        private void saveImageToFile(Image acptSave) {
+        //private void saveImageToFile(Image acptSave) {
+        //    String strType = SelectedOutput.OutputType.ToString();
+        //    BitmapEncoder encoder = new PngBitmapEncoder();
+        //    encoder.Frames.Add(BitmapFrame.Create(acptSave.CreateBitmapSource()));
 
-            String strType = SelectedOutput.OutputType.ToString();
-            BitmapEncoder encoder = new PngBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(acptSave.CreateBitmapSource()));
-
-            string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
-            string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-            string path = Path.Combine(myPhotos, "KinectScreenshotAvg_" + CAPTURE_CAPACITY + "_" + strType + "-" + time + ".png");
+        //    string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
+        //    string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+        //    string path = Path.Combine(myPhotos, "KinectScreenshotAvg_" + CAPTURE_CAPACITY + "_" + strType + "-" + time + ".png");
             
-            // Write the new file to disk
-            try {
-                using (FileStream fs = new FileStream(path, FileMode.Create)) {
-                    encoder.Save(fs);
-                }
-                this.StatusText = string.Format(Properties.Resources.SavedScreenshotStatusTextFormat, path);
-            } catch (IOException) {
-                this.StatusText = string.Format(Properties.Resources.FailedScreenshotStatusTextFormat, path);
-            }
-            return;
-        }
+        //    // Write the new file to disk
+        //    try {
+        //        using (FileStream fs = new FileStream(path, FileMode.Create)) {
+        //            encoder.Save(fs);
+        //        }
+        //        this.StatusText = string.Format(Properties.Resources.SavedScreenshotStatusTextFormat, path);
+        //    } catch (IOException) {
+        //        this.StatusText = string.Format(Properties.Resources.FailedScreenshotStatusTextFormat, path);
+        //    }
+        //    return;
+        //}
 
         //private void saveDepthDataToFile(float[,] aseqPoints) {
         //    string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
@@ -668,15 +675,16 @@ namespace K4ACalibration
             }
         }
 
-		public int DepthHeight => depthHeight;
+		public bool SaveAverageFlag { get => _bSaveAverageFlag; set => _bSaveAverageFlag = value; }
 
-        public int DepthWidth => depthWidth;
+		public List<Capture> DepthCaptureList => _lstDepthCaptures;
 
-		public static int KINECT_CAPTURE_CAPACITY { get => CAPTURE_CAPACITY; set => CAPTURE_CAPACITY = value; }
+		public List<Capture> IrCaptureList => _lstIrCaptures;
+
+		public List<Capture> RgbCaptureList => _lstRgbCaptures;
 	}
 
-    public enum OutputType
-    {
+    public enum OutputType {
         Colour,
         Depth,
         IR
