@@ -94,6 +94,7 @@
             <StatusBarItem Content="{Binding StatusText}" FontFamily="Segoe UI" FontSize="16"/>
         </StatusBar>
         <WrapPanel Grid.Row="3" HorizontalAlignment="Right" >
+            
             <Button Grid.Row="3" Style="{StaticResource ScreenshotButton}" Content="Save Average" Height="Auto" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10 10 0 10" Click="SaveAverage_Click" />
             <Button Grid.Row="3" Style="{StaticResource ScreenshotButton}" Content="Screenshot" Height="Auto" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10 10 0 10" Click="ScreenshotButton_Click" />
         </WrapPanel>

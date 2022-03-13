@@ -27,6 +27,7 @@ namespace K4ACalibration {
             winMain.autoReset.WaitOne();
 
             switch (winMain.SelectedOutput.OutputType) {
+                
                 case OutputType.Depth:
 
                     if (winMain.DepthCaptureList.Count >= MainWindow.CAPTURE_CAPACITY) {

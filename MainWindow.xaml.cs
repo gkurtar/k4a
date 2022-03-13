@@ -387,6 +387,41 @@ namespace K4ACalibration
             } catch (IOException) {
                 this.StatusText = string.Format(Properties.Resources.FailedScreenshotStatusTextFormat, path);
             }
+
+            saveCalibrationDataToFile();
+
+            return;
+        }
+
+        private void saveCalibrationDataToFile() {
+
+            Calibration obj = kinect.GetCalibration(this.kinect.CurrentDepthMode, this.kinect.CurrentColorResolution);
+            
+            string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+            string pathDepth = System.IO.Path.Combine(myPhotos, "CALIB_DATA.txt");
+
+            // write the new file to disk
+            try {
+                using (StreamWriter sw = new StreamWriter(pathDepth)) {
+                    //sw.WriteLine(x + " " + y + " " + aseqPoints[x, y]);
+                    sw.WriteLine(obj.ToString());
+                    sw.WriteLine(obj.ColorCameraCalibration.ToString());
+                    
+                    CameraCalibration objColorCal = obj.ColorCameraCalibration;
+                    sw.WriteLine(objColorCal.Intrinsics.ToString());
+                    //objColorCal.Extrinsics.Rotation.
+
+                    sw.WriteLine(objColorCal.Intrinsics.Parameters.ToString());
+
+					for (int i = 0; i < objColorCal.Intrinsics.ParameterCount; i++) {
+                        sw.WriteLine(i + " " + objColorCal.Intrinsics.Parameters[i]);
+                    }
+                }
+
+            } catch (IOException) {
+                this.StatusText = string.Format(CultureInfo.InvariantCulture,
+                    "{0}", Properties.Resources.FailedScreenshotStatusTextFormat);
+            }
             return;
         }
 
