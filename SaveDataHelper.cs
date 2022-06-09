@@ -130,7 +130,7 @@ namespace K4ACalibration {
                         cptRgbAverage.Color.DeviceTimestamp = cptSample.Color.DeviceTimestamp;
                         cptRgbAverage.Color.SystemTimestampNsec = cptSample.Color.SystemTimestampNsec;
 
-                        MessageBox.Show("sdf w-" + winMain.colorWidth + " h- " + winMain.colorHeight + " " + cptSample.Color.Format);
+                        //MessageBox.Show("sdf w-" + winMain.colorWidth + " h- " + winMain.colorHeight + " " + cptSample.Color.Format);
 
                         int nValue = 0;
                         int nTotal = 0;
@@ -169,14 +169,20 @@ namespace K4ACalibration {
 
         private void saveImageToFile(Image acptSave) {
 
-            String strType = winMain.SelectedOutput.OutputType.ToString();
+            //String strType = winMain.SelectedOutput.OutputType.ToString();
+            String strType = String.Format("{0}_{1}_{2}",
+                winMain.SelectedOutput.OutputType.ToString(),
+                this.winMain.kinectDevConfig.ColorFormat,
+                this.winMain.kinectDevConfig.ColorResolution);
+            
             BitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(acptSave.CreateBitmapSource()));
 
             string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
-            string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-            string path = Path.Combine(myPhotos, "KinectScreenshotAvg_"
-                + MainWindow.CAPTURE_CAPACITY + "_" + strType + "-" + time + ".png");
+            //string path = Path.Combine(MainWindow.DIR_PATH, "KinectScreenshotAvg_"
+            //    + MainWindow.CAPTURE_CAPACITY + "_" + strType + "-" + time + ".png");
+            string path = System.IO.Path.Combine(MainWindow.DIR_PATH,
+                String.Format("K4A_{0}_Avg_{1}-{2}.png", strType, MainWindow.CAPTURE_CAPACITY, time));
 
             // Write the new file to disk
             try {
@@ -192,9 +198,42 @@ namespace K4ACalibration {
 
         private void saveDepthDataToFile(float[,] aseqPoints) {
 
+            string time = System.DateTime.Now.ToString(
+                "hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
+            //string pathDepth = System.IO.Path.Combine(
+            //    MainWindow.DIR_PATH, "DepthAvg_" + winMain.kinectDevConfig.DepthMode + "_" + MainWindow.CAPTURE_CAPACITY + "-" + time + ".txt");
+
+            string pathDepth = System.IO.Path.Combine(MainWindow.DIR_PATH,
+                String.Format("K4A_Depth_{0}_Avg_{1}-{2}.txt",
+                    winMain.kinectDevConfig.DepthMode, MainWindow.CAPTURE_CAPACITY, time));
+
+            // write the new file to disk
+            try {
+                using (StreamWriter sw = new StreamWriter(pathDepth)) {
+                    // loop over each row and column of the depth
+                    for (int x = 0; x < winMain.depthHeight; ++x) {
+                        for (int y = 0; y < winMain.depthWidth; ++y) {
+                            // calculate index into depth array
+                            sw.WriteLine(x + " " + y + " " + aseqPoints[x, y]);
+                        }
+                    }
+                }
+                winMain.StatusText = string.Format(CultureInfo.InvariantCulture, "Saved depth data to {0}", pathDepth);
+
+            } catch (IOException) {
+                winMain.StatusText = string.Format(CultureInfo.InvariantCulture,
+                    "{0}", Properties.Resources.FailedScreenshotStatusTextFormat);
+            }
+            return;
+        }
+
+        internal void saveDepthDataToFile(int[,] aseqPoints) {
+
             string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
-            string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-            string pathDepth = System.IO.Path.Combine(myPhotos, "DepthAvg_" + MainWindow.CAPTURE_CAPACITY + "-" + time + ".txt");
+            //string pathDepth = System.IO.Path.Combine(MainWindow.DIR_PATH,
+            //    "Depth_" + winMain.kinectDevConfig.DepthMode + "_" + time + ".txt");
+            string pathDepth = System.IO.Path.Combine(MainWindow.DIR_PATH,
+                String.Format("K4A_Depth_{0}-{1}.txt", winMain.kinectDevConfig.DepthMode, time));
 
             // write the new file to disk
             try {
