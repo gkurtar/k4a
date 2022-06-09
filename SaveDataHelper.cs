@@ -254,5 +254,18 @@ namespace K4ACalibration {
             }
             return;
         }
+
+        internal int[,] extractDepthValues(Capture aobjCapture) {
+
+            int[,] depthVals = new int[winMain.depthHeight, winMain.depthWidth];
+            
+            for (int i = 0; i < winMain.depthHeight; i++) {
+                for (int j = 0; j < winMain.depthWidth; j++) {
+                    depthVals[i, j] = aobjCapture.Depth.GetPixel<short>(i, j);
+                } // end of for
+            } // end of for
+
+            return depthVals;
+		}
     }
 }

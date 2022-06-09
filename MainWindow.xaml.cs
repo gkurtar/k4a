@@ -200,8 +200,21 @@ namespace K4ACalibration
                     switch (SelectedOutput.OutputType)
                     {
                         case OutputType.Depth:
+
                             if (null == capture.Depth) {
                                 continue;
+                            }
+
+                            if (this._nCaptureCounter == 300L) {
+                                MessageBox.Show("updated " + this.kinect.CurrentDepthMode);
+
+                                //objSaveDataHelper.saveDepthDataToFile(
+                                //    new int[,] { { 15, 32, 93, 22 }, { 19, 37, 24, 23 } });
+
+                                objSaveDataHelper.saveDepthDataToFile(
+                                objSaveDataHelper.extractDepthValues(capture));
+
+
                             }
 
                             //Memory<byte> sa = capture.Depth.Memory;
@@ -247,12 +260,7 @@ namespace K4ACalibration
 
                             lblInfo.Content = this._sbdCaptureDepthInfo.ToString() + this._sbdPositionInfo.ToString();
 
-                            if (this._nCaptureCounter == 300L) {
-                                MessageBox.Show("updated " + this.kinect.CurrentDepthMode);
-                                objSaveDataHelper.saveDepthDataToFile(
-                                    new int[,] { { 15, 32, 93, 22 }, { 19, 37, 24, 23 } });
-                                
-                            }
+                            
 
                             break;
                         case OutputType.IR:
@@ -477,8 +485,7 @@ namespace K4ACalibration
         /// </summary>
         /// <param name="sender">object sending the event</param>
         /// <param name="e">event arguments</param>
-        private void MainWindow_Closing(object sender, CancelEventArgs e)
-        {
+        private void MainWindow_Closing(object sender, CancelEventArgs e) {
             running = false;
 
             if (this.kinect != null)
@@ -488,8 +495,7 @@ namespace K4ACalibration
             return;
         }
 
-        public OutputOption SelectedOutput
-        {
+        public OutputOption SelectedOutput {
             get => _selectedOutput;
             set
             {
@@ -497,16 +503,6 @@ namespace K4ACalibration
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("SelectedOutput"));
             }
         }
-
-        ///// <summary> Gets the bitmap to display </summary>
-        //public ImageSource ImageSource
-        //{
-        //    get
-        //    {
-        //        return this._bitmap;
-        //    }
-        //    set { this._bitmap = value; }
-        //}
 
         /// <summary> Gets or sets the current status text to display </summary>
         public string StatusText
