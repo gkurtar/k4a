@@ -413,16 +413,23 @@ namespace K4ACalibration
             
             BitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
+
+            String strType = String.Format("{0}_{1}_{2}",
+                this.SelectedOutput.OutputType.ToString(),
+                this.kinectDevConfig.ColorFormat,
+                this.kinectDevConfig.ColorResolution);
             string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
-            //string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-            string path = Path.Combine(DIR_PATH, "KinectScreenshot-" + time + ".png");
+            string path = System.IO.Path.Combine(MainWindow.DIR_PATH,
+                String.Format("K4A_{0}_ScreenShot-{1}.png", strType, time));
+            //string path = Path.Combine(DIR_PATH, "KinectScreenshot-" + time + ".png");
 
             // Write the new file to disk
             try {
                 using (FileStream fs = new FileStream(path, FileMode.Create)) {
                     encoder.Save(fs);
                 }
-                this.StatusText = string.Format(Properties.Resources.SavedScreenshotStatusTextFormat, path);
+                this.StatusText = string.Format(Properties.Resources.SavedScreenshotStatusTextFormat,
+                    path.Substring(path.LastIndexOf(Path.DirectorySeparatorChar)));
             } catch (IOException) {
                 this.StatusText = string.Format(Properties.Resources.FailedScreenshotStatusTextFormat, path);
             }
@@ -436,6 +443,8 @@ namespace K4ACalibration
 
             Calibration obj = kinect.GetCalibration(this.kinect.CurrentDepthMode, this.kinect.CurrentColorResolution);
             
+            
+
             string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
             string pathDepth = System.IO.Path.Combine(myPhotos, "CALIB_DATA.txt");
 
@@ -443,20 +452,65 @@ namespace K4ACalibration
             try {
                 using (StreamWriter sw = new StreamWriter(pathDepth)) {
                     //sw.WriteLine(x + " " + y + " " + aseqPoints[x, y]);
+
+                    sw.WriteLine("\nCOLOR CAM");
+                    sw.WriteLine("Resolution " + obj.ColorResolution.ToString());
+                    sw.WriteLine("Type " + obj.ColorCameraCalibration.Intrinsics.Type.ToString());
+
                     sw.WriteLine(obj.ToString());
                     sw.WriteLine(obj.ColorCameraCalibration.ToString());
-                    
+
                     CameraCalibration objColorCal = obj.ColorCameraCalibration;
                     sw.WriteLine(objColorCal.Intrinsics.ToString());
-                    //objColorCal.Extrinsics.Rotation.
-
                     sw.WriteLine(objColorCal.Intrinsics.Parameters.ToString());
 
-					for (int i = 0; i < objColorCal.Intrinsics.ParameterCount; i++) {
+					for (int i = 0; i < objColorCal.Intrinsics.Parameters.Length; i++) {
                         sw.WriteLine(i + " " + objColorCal.Intrinsics.Parameters[i]);
                     }
-                }
 
+                    sw.WriteLine(objColorCal.Extrinsics.ToString());
+                    sw.WriteLine("\nROTATION");
+                    sw.WriteLine(objColorCal.Extrinsics.Rotation.ToString());
+                    for (int i = 0; i < objColorCal.Extrinsics.Rotation.Length; i++) {
+                        sw.WriteLine(i + " " + objColorCal.Extrinsics.Rotation[i]);
+                    }
+
+                    sw.WriteLine("\nTRANSLATION");
+                    sw.WriteLine(objColorCal.Extrinsics.Translation.ToString());
+                    for (int i = 0; i < objColorCal.Extrinsics.Translation.Length; i++) {
+                        sw.WriteLine(i + " " + objColorCal.Extrinsics.Translation[i]);
+                    }
+
+                    sw.WriteLine("\n===============================");
+                    CameraCalibration objDepthCal = obj.DepthCameraCalibration;
+                    sw.WriteLine("\nDEPTH CAM");
+                    sw.WriteLine("Depth Mode: " + obj.DepthMode.ToString());
+                    sw.WriteLine("Type " + objDepthCal.Intrinsics.Type.ToString());
+
+                    sw.WriteLine(objDepthCal.Intrinsics.ToString());
+                    sw.WriteLine(objDepthCal.Intrinsics.Parameters.ToString());
+
+                    for (int i = 0; i < objDepthCal.Intrinsics.Parameters.Length; i++) {
+                        sw.WriteLine(i + " " + objDepthCal.Intrinsics.Parameters[i]);
+                    }
+
+                    sw.WriteLine(objDepthCal.Extrinsics.ToString());
+                    sw.WriteLine("\nROTATION");
+                    sw.WriteLine(objDepthCal.Extrinsics.Rotation.ToString());
+                    for (int i = 0; i < objDepthCal.Extrinsics.Rotation.Length; i++) {
+                        sw.WriteLine(i + " " + objDepthCal.Extrinsics.Rotation[i]);
+                    }
+
+                    sw.WriteLine("\nTRANSLATION");
+                    sw.WriteLine(objDepthCal.Extrinsics.Translation.ToString());
+                    for (int i = 0; i < objDepthCal.Extrinsics.Translation.Length; i++) {
+                        sw.WriteLine(i + " " + objDepthCal.Extrinsics.Translation[i]);
+                    }
+
+                    //sw.WriteLine("\n===============================");
+                    //sw.WriteLine("\nDEVICE EXTRINSICS");
+                    //sw.WriteLine("Dev ext: " + obj.DeviceExtrinsics.ToString());
+                }
             } catch (IOException) {
                 this.StatusText = string.Format(CultureInfo.InvariantCulture,
                     "{0}", Properties.Resources.FailedScreenshotStatusTextFormat);
