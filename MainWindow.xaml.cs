@@ -62,9 +62,12 @@ namespace K4ACalibration
         internal readonly DeviceConfiguration kinectDevConfig = new DeviceConfiguration{
             ColorFormat = ImageFormat.ColorBGRA32,
             ColorResolution = ColorResolution.R2160p,
-            DepthMode = DepthMode.NFOV_2x2Binned,
+            //ColorResolution = ColorResolution.R3072p,
+            //DepthMode = DepthMode.NFOV_2x2Binned,
             //DepthMode = DepthMode.WFOV_2x2Binned,
-            //DepthMode = DepthMode.NFOV_Unbinned,
+            //DepthMode = DepthMode.WFOV_Unbinned,
+            CameraFPS = FPS.FPS30,
+            DepthMode = DepthMode.NFOV_Unbinned,
             SynchronizedImagesOnly = false
         };
 
@@ -191,6 +194,8 @@ namespace K4ACalibration
         {
             int nPixelValue = 0;
             int nLastIndex = 0;
+            bool oneShotFlag = true;
+            int depthSnapshot = 1;
             //lblInfo.Content = this._sbdCaptureInfo.ToString();
             while (running)
             {
@@ -205,16 +210,25 @@ namespace K4ACalibration
                                 continue;
                             }
 
-                            if (this._nCaptureCounter == 300L) {
-                                MessageBox.Show("updated " + this.kinect.CurrentDepthMode);
+                            if (this._nCaptureCounter % 91L == 0) {
 
-                                //objSaveDataHelper.saveDepthDataToFile(
-                                //    new int[,] { { 15, 32, 93, 22 }, { 19, 37, 24, 23 } });
+                                string strRecordDataFlag = System.IO.File.ReadAllText(@"C:\tmp\aa.txt");
+                                bool res = false;
+                                if (!Boolean.TryParse(strRecordDataFlag, out res) || !res) {
+                                    continue;
+								}
+
+                                if (depthSnapshot++ == 10)
+                                MessageBox.Show("updated " + this.kinect.CurrentDepthMode + " " + depthSnapshot);
+
 
                                 objSaveDataHelper.saveDepthDataToFile(
                                 objSaveDataHelper.extractDepthValues(capture));
-
-
+                                if (oneShotFlag) {
+                                    //saveCalibrationDataToFile();
+                                    this.SaveAverage_Click(null, null);
+                                    oneShotFlag = false;
+                                }
                             }
 
                             //Memory<byte> sa = capture.Depth.Memory;
@@ -435,18 +449,18 @@ namespace K4ACalibration
             }
 
             saveCalibrationDataToFile();
-
             return;
         }
 
         private void saveCalibrationDataToFile() {
 
             Calibration obj = kinect.GetCalibration(this.kinect.CurrentDepthMode, this.kinect.CurrentColorResolution);
-            
-            
 
+            string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
             string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-            string pathDepth = System.IO.Path.Combine(myPhotos, "CALIB_DATA.txt");
+            //string pathDepth = System.IO.Path.Combine(myPhotos, "CALIB_DATA.txt");
+            string pathDepth = System.IO.Path.Combine(myPhotos,
+                String.Format("CALIB_DATA_{0}_{1}.txt", this.kinect.CurrentDepthMode, time));
 
             // write the new file to disk
             try {
@@ -530,6 +544,9 @@ namespace K4ACalibration
             
             Thread thdSaveAvg = new Thread(new ThreadStart(objSaveDataHelper.saveAverageCapture));
             //autoReset.Reset();
+
+            MessageBox.Show("started average eval");
+
             thdSaveAvg.Start();
             return;
         }

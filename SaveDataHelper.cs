@@ -41,7 +41,7 @@ namespace K4ACalibration {
                         cptDepthAverage.Depth.SystemTimestampNsec = cptSample.Depth.SystemTimestampNsec;
 
                         short sValue = 0;
-                        short sTotal = 0;
+                        long lTotal = 0;
                         short sCount = 0;
                         int index = 0;
                         float[,] depthVals = new float[winMain.depthHeight, winMain.depthWidth];
@@ -50,18 +50,25 @@ namespace K4ACalibration {
 
                         for (int i = 0; i < winMain.depthHeight; i++) {
                             for (int j = 0; j < winMain.depthWidth; j++) {
-                                sTotal = sCount = 0;
+                                lTotal = 0;
+                                sCount = 0;
                                 index = 0;
                                 foreach (Capture cptDepth in winMain.DepthCaptureList) {
                                     sValue = cptDepth.Depth.GetPixel<short>(i, j);
                                     if (sValue > 0) {
-                                        sTotal += sValue;
+                                        lTotal += sValue;
                                         sCount++;
                                     }
-                                    depthAll[index, i, j] = sValue;
+                                    //depthAll[index, i, j] = sValue;
                                     index++;
                                 }
-                                depthVals[i, j] = sCount == 0 ? 0 : sTotal / (float)sCount;
+                                depthVals[i, j] = sCount == 0 ? 0 : lTotal / (float)sCount;
+                               //if (depthVals[i, j] < 0) {
+                   //String strMessage = String.Format("depth {0},{1} = {2}, total={3}, count={4} ",
+                      // i, j, depthVals[i, j], lTotal, sCount);
+                        //MessageBox.Show(strMessage);
+                          //          return;
+                            //    }
                                 cptDepthAverage.Depth.SetPixel<short>(i, j, (short)depthVals[i, j]);
                             } // end of for
                         } // end of for

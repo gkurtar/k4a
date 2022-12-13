@@ -103,6 +103,7 @@
     </Compile>
     <Compile Include="SaveDataHelper.cs" />
     <Compile Include="GeneralUtil.cs" />
+    <Compile Include="Settings.cs" />
     <Compile Include="Window1.xaml.cs">
       <DependentUpon>Window1.xaml</DependentUpon>
     </Compile>
